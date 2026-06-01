@@ -1,3 +1,4 @@
+import json
 from datetime import datetime, timedelta
 from typing import Optional, List
 import networkx as nx
@@ -149,4 +150,3 @@ class DarkPatternCorrelationEngine:
         return recommendations.get(pattern_name, ["Monitor situation", "Notify duty officer"])
 
 
-import json

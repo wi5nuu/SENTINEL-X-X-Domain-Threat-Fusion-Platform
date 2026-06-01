@@ -61,7 +61,7 @@ class BlockchainService:
             contract = self.w3.eth.contract(abi=compiled["abi"], bytecode=compiled["bin"])
             tx_hash = contract.constructor().transact({"from": self.account.address})
             receipt = self.w3.eth.wait_for_transaction_receipt(tx_hash)
-            logger.info(f"Contract deployed", extra={"name": contract_name, "address": receipt.contractAddress})
+            logger.info("Contract deployed", extra={"name": contract_name, "address": receipt.contractAddress})
             return receipt.contractAddress
         except Exception as e:
             logger.error("Contract deploy error", extra={"error": str(e)})

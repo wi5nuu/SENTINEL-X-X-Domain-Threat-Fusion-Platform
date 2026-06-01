@@ -14,6 +14,7 @@ from src.common.logging import setup_logging
 from src.common.kafka import kafka_client
 from src.common.database import init_db, get_session, AlertDB
 from src.common.models import Alert, ThreatLevel, CompoundThreat
+from prometheus_client import CONTENT_TYPE_LATEST
 from src.common.metrics import get_metrics
 from src.common.websocket_broadcast import ws_manager
 
