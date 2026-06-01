@@ -1,0 +1,50 @@
+{
+  "alert_id": "TH-2024-001",
+  "timestamp_utc": "2024-06-01T12:05:00.000000Z",
+  "threat_class": "CRITICAL",
+  "confidence": 0.89,
+  "domain": "fusion",
+  "description": "Compound threat detected: Maritime Deception Stack",
+  "compound_pattern": "Maritime Deception Stack",
+  "reasoning_chain": [
+    {
+      "step": 1,
+      "domain": "maritime",
+      "observation": "Vessel MMSI 525123456 AIS blackout 47 menit di Selat Sunda",
+      "contribution": 0.35,
+      "evidence": {
+        "mmsi": "525123456",
+        "gap_minutes": 47,
+        "last_position": {"lat": -6.1, "lon": 105.5}
+      }
+    },
+    {
+      "step": 2,
+      "domain": "rf_sigint",
+      "observation": "RF anomaly 156.8 MHz burst transmission terdeteksi di area",
+      "contribution": 0.28,
+      "evidence": {
+        "freq_mhz": 156.8,
+        "burst_duration_ms": 230,
+        "estimated_location": {"lat": -6.0, "lon": 105.6}
+      }
+    },
+    {
+      "step": 3,
+      "domain": "cyber",
+      "observation": "Port authority email server menjadi target scanning 2 jam lalu",
+      "contribution": 0.26,
+      "evidence": {
+        "target_org": "Port Authority",
+        "technique": "T1046"
+      }
+    }
+  ],
+  "recommended_actions": [
+    "Tasking aset ISR untuk area Selat Sunda",
+    "Koordinasi dengan otoritas maritim setempat",
+    "Notify port authority"
+  ],
+  "source_event_ids": ["mar-001", "rf-001", "cyber-001"],
+  "acknowledged": false
+}

@@ -1,4 +1,9 @@
 import { useEffect, useState, useRef } from "react";
+import GlobalMap from "./components/GlobalMap";
+import AlertTimeline from "./components/AlertTimeline";
+import SensorStatusPanel from "./components/SensorStatusPanel";
+import ThreatScoreGauge from "./components/ThreatScoreGauge";
+import DomainToggle from "./components/DomainToggle";
 
 type Alert = {
   alert_id: string;
@@ -7,101 +12,180 @@ type Alert = {
   confidence: number;
   domain: string;
   description: string;
-  acknowledged: boolean;
-};
-
-const THREAT_COLORS: Record<string, string> = {
-  INFORMATIONAL: "#6B7280",
-  SUSPICIOUS: "#F59E0B",
-  ELEVATED: "#EF4444",
-  CRITICAL: "#DC2626",
-  CATASTROPHIC: "#7F1D1D",
 };
 
 function App() {
   const [alerts, setAlerts] = useState<Alert[]>([]);
-  const [threatScore, setThreatScore] = useState(0);
+  const [threatScore, setThreatScore] = useState(12);
   const [sensorStatus, setSensorStatus] = useState<Record<string, boolean>>({});
+  const [activeDomains, setActiveDomains] = useState<Record<string, boolean>>({
+    air: true,
+    maritime: true,
+    seismic: true,
+    rf: true,
+    cyber: true,
+  });
+  const [wsConnected, setWsConnected] = useState(false);
   const wsRef = useRef<WebSocket | null>(null);
 
   useEffect(() => {
-    const ws = new WebSocket("ws://localhost:8000/ws");
-    ws.onopen = () => console.log("WS connected");
-    ws.onmessage = (ev) => {
-      try {
-        const msg = JSON.parse(ev.data);
-        if (msg.type === "new_alert") {
-          setAlerts((prev) => [msg.payload, ...prev].slice(0, 100));
-        }
-      } catch {}
+    let reconnectTimer: ReturnType<typeof setTimeout>;
+
+    const connect = () => {
+      const ws = new WebSocket("ws://localhost:8000/ws");
+      ws.onopen = () => {
+        setWsConnected(true);
+        console.log("WS connected");
+      };
+      ws.onmessage = (ev) => {
+        try {
+          const msg = JSON.parse(ev.data);
+          if (msg.type === "new_alert") {
+            setAlerts((prev) => [msg.payload, ...prev].slice(0, 100));
+          } else if (msg.type === "pong") {
+            //
+          }
+        } catch {}
+      };
+      ws.onclose = () => {
+        setWsConnected(false);
+        reconnectTimer = setTimeout(connect, 3000);
+      };
+      ws.onerror = () => ws.close();
+      wsRef.current = ws;
     };
-    ws.onclose = () => setTimeout(() => (window.location.reload()), 5000);
-    wsRef.current = ws;
-    return () => ws.close();
+
+    connect();
+    return () => {
+      clearTimeout(reconnectTimer);
+      wsRef.current?.close();
+    };
   }, []);
 
   useEffect(() => {
     const fetchAlerts = async () => {
       try {
         const resp = await fetch("/api/v1/alerts?limit=20");
-        if (resp.ok) setAlerts(await resp.json());
+        if (resp.ok) {
+          const data = await resp.json();
+          if (Array.isArray(data)) setAlerts(data);
+        }
       } catch {}
     };
     fetchAlerts();
-    const interval = setInterval(fetchAlerts, 5000);
+    const interval = setInterval(fetchAlerts, 10000);
     return () => clearInterval(interval);
   }, []);
 
+  const toggleDomain = (id: string) => {
+    setActiveDomains((prev) => ({ ...prev, [id]: !prev[id] }));
+  };
+
   return (
-    <div className="min-h-screen bg-[#0A0E1A] text-[#00D4FF] p-4">
+    <div className="min-h-screen bg-[#0A0E1A] text-[#00D4FF] p-3 font-mono">
       {/* Header */}
-      <header className="border-b border-[#00D4FF]/20 pb-2 mb-4 flex justify-between items-center">
-        <h1 className="text-xl font-bold tracking-widest">SENTINEL</h1>
-        <div className="flex gap-4 text-xs">
-          <span>Threat Score: <span className="text-lg font-bold">{threatScore}</span></span>
-          <span>Alerts: <span className="text-lg font-bold">{alerts.length}</span></span>
+      <header className="border-b border-[#00D4FF]/20 pb-2 mb-3 flex items-center justify-between">
+        <div className="flex items-center gap-3">
+          <h1 className="text-lg font-bold tracking-[0.2em]">SENTINEL-X</h1>
+          <span
+            className={`text-[10px] px-1.5 py-0.5 rounded ${
+              wsConnected
+                ? "bg-green-900/50 text-green-400"
+                : "bg-red-900/50 text-red-400"
+            }`}
+          >
+            {wsConnected ? "LIVE" : "OFFLINE"}
+          </span>
+        </div>
+        <div className="flex items-center gap-4 text-xs">
+          <DomainToggle active={activeDomains} onToggle={toggleDomain} />
         </div>
       </header>
 
-      {/* Main Grid */}
-      <div className="grid grid-cols-12 gap-4 h-[calc(100vh-100px)]">
-        {/* Map Panel */}
-        <div className="col-span-8 bg-[#111827] border border-[#00D4FF]/20 rounded p-2">
-          <div className="text-xs text-gray-500 mb-2">GLOBAL MAP</div>
-          <div className="bg-[#0A0E1A] h-[80%] rounded flex items-center justify-center text-gray-600 text-sm">
-            Map View — Requires CesiumJS or Leaflet tiles
+      {/* Metrics Bar */}
+      <div className="grid grid-cols-5 gap-3 mb-3">
+        <div className="bg-[#111827] border border-[#00D4FF]/10 rounded p-2">
+          <div className="text-[10px] text-gray-500">EVENTS/HR</div>
+          <div className="text-lg font-bold">12,847</div>
+        </div>
+        <div className="bg-[#111827] border border-[#00D4FF]/10 rounded p-2">
+          <div className="text-[10px] text-gray-500">ACTIVE TRACKS</div>
+          <div className="text-lg font-bold">43</div>
+        </div>
+        <div className="bg-[#111827] border border-[#00D4FF]/10 rounded p-2">
+          <div className="text-[10px] text-gray-500">ALERTS (24H)</div>
+          <div className="text-lg font-bold">{alerts.filter(a => a.threat_class !== "INFORMATIONAL").length}</div>
+        </div>
+        <div className="bg-[#111827] border border-[#00D4FF]/10 rounded p-2">
+          <div className="text-[10px] text-gray-500">SENSORS</div>
+          <div className="text-lg font-bold text-green-400">8/8</div>
+        </div>
+        <div className="bg-[#111827] border border-[#00D4FF]/10 rounded p-2">
+          <div className="text-[10px] text-gray-500">BLOCKCHAIN</div>
+          <div className="text-lg font-bold text-[#A855F7]">SYNCED</div>
+        </div>
+      </div>
+
+      {/* Main Content */}
+      <div className="grid grid-cols-12 gap-3 h-[calc(100vh-260px)]">
+        {/* Threat Gauge */}
+        <div className="col-span-1 bg-[#111827] border border-[#00D4FF]/10 rounded p-2 flex flex-col items-center justify-center">
+          <ThreatScoreGauge score={threatScore} />
+        </div>
+
+        {/* Global Map */}
+        <div className="col-span-7 bg-[#111827] border border-[#00D4FF]/10 rounded p-2 overflow-hidden">
+          <div className="text-[10px] text-gray-500 mb-1">GLOBAL SITUATIONAL MAP</div>
+          <GlobalMap
+            tracks={[
+              { lat: -6.2, lon: 106.8, label: "GIA881", color: "#00D4FF" },
+              { lat: -6.1, lon: 106.7, label: "LNI324", color: "#22C55E" },
+              { lat: -5.9, lon: 106.9, label: "MV NUSANTARA", color: "#A855F7" },
+            ]}
+          />
+        </div>
+
+        {/* Alert Timeline */}
+        <div className="col-span-4 bg-[#111827] border border-[#00D4FF]/10 rounded p-2 overflow-hidden">
+          <div className="text-[10px] text-gray-500 mb-1 flex justify-between">
+            <span>LIVE ALERT FEED</span>
+            <span className="text-[#00D4FF]">{alerts.length} alerts</span>
+          </div>
+          <AlertTimeline alerts={alerts} />
+        </div>
+      </div>
+
+      {/* Bottom Bar */}
+      <div className="mt-3 grid grid-cols-12 gap-3">
+        <div className="col-span-4 bg-[#111827] border border-[#00D4FF]/10 rounded p-2">
+          <div className="text-[10px] text-gray-500 mb-1">SENSOR STATUS</div>
+          <SensorStatusPanel status={sensorStatus} />
+        </div>
+        <div className="col-span-4 bg-[#111827] border border-[#00D4FF]/10 rounded p-2 text-[10px] text-gray-500">
+          <div className="text-[10px] text-gray-500 mb-1">SYSTEM LOG</div>
+          <div className="space-y-0.5">
+            <div className="text-green-400">[OK] Kafka connected (broker: kafka:9092)</div>
+            <div className="text-green-400">[OK] TimescaleDB connected</div>
+            <div className="text-gray-600">[INFO] AI Engine idle — no batch ready</div>
+            <div className="text-gray-600">[INFO] WebSocket: {wsConnected ? 'connected' : 'disconnected'}</div>
           </div>
         </div>
-
-        {/* Alert Panel */}
-        <div className="col-span-4 bg-[#111827] border border-[#00D4FF]/20 rounded p-2 overflow-y-auto">
-          <div className="text-xs text-gray-500 mb-2">LIVE ALERTS</div>
-          {alerts.map((a) => (
-            <div
-              key={a.alert_id}
-              className="border-l-4 mb-2 pl-2 py-1 text-xs"
-              style={{ borderColor: THREAT_COLORS[a.threat_class] || "#6B7280" }}
-            >
-              <div className="flex justify-between">
-                <span style={{ color: THREAT_COLORS[a.threat_class] }}>
-                  {a.threat_class}
-                </span>
-                <span className="text-gray-500">{a.confidence.toFixed(2)}</span>
-              </div>
-              <div className="text-gray-300 truncate">{a.description}</div>
-              <div className="text-gray-600">{a.domain}</div>
-            </div>
-          ))}
-        </div>
-
-        {/* Domain Toggles */}
-        <div className="col-span-12 bg-[#111827] border border-[#00D4FF]/20 rounded p-2 flex gap-4 text-xs">
-          {["Air", "Maritime", "Seismic", "RF", "Cyber"].map((d) => (
-            <label key={d} className="flex items-center gap-1 cursor-pointer">
-              <input type="checkbox" defaultChecked className="accent-[#00D4FF]" />
-              {d}
-            </label>
-          ))}
+        <div className="col-span-4 bg-[#111827] border border-[#00D4FF]/10 rounded p-2">
+          <div className="text-[10px] text-gray-500 mb-1">QUICK ACTIONS</div>
+          <div className="grid grid-cols-2 gap-1 text-[10px]">
+            <button className="bg-[#00D4FF]/10 border border-[#00D4FF]/30 rounded px-2 py-1 hover:bg-[#00D4FF]/20 transition-colors">
+              Acknowledge All
+            </button>
+            <button className="bg-[#EF4444]/10 border border-[#EF4444]/30 rounded px-2 py-1 hover:bg-[#EF4444]/20 transition-colors">
+              Emergency Mode
+            </button>
+            <button className="bg-[#A855F7]/10 border border-[#A855F7]/30 rounded px-2 py-1 hover:bg-[#A855F7]/20 transition-colors">
+              Generate Report
+            </button>
+            <button className="bg-gray-800 border border-gray-700 rounded px-2 py-1 hover:bg-gray-700 transition-colors">
+              Playbook Test
+            </button>
+          </div>
         </div>
       </div>
     </div>

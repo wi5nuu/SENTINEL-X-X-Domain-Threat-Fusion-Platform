@@ -1,0 +1,13 @@
+{
+  "event_id": "cyber-20240601-001",
+  "timestamp_utc": "2024-06-01T12:00:00.000000Z",
+  "src_ip": "185.220.101.45",
+  "src_port": 34567,
+  "dst_port": 502,
+  "protocol": "Modbus TCP (PLC)",
+  "payload_hex": "0300001611be0000000100010061010001000000",
+  "technique": "Nmap",
+  "target_sector": "power_grid",
+  "source_feed": "honeypot",
+  "severity": "SUSPICIOUS"
+}

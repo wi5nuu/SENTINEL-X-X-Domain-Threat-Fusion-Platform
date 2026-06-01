@@ -1,0 +1,13 @@
+{
+  "event_id": "rf-20240601-001",
+  "timestamp_utc": "2024-06-01T12:00:00.000000Z",
+  "freq_mhz": 1575.42,
+  "bandwidth_hz": 20000000.0,
+  "signal_strength_dbm": -35.0,
+  "estimated_lat": -6.2000,
+  "estimated_lon": 106.8000,
+  "confidence": 0.85,
+  "anomaly_type": "gps_jamming",
+  "protocol_guess": null,
+  "burst_interval_ms": null
+}

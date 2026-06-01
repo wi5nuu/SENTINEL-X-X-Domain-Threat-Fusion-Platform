@@ -1,0 +1,22 @@
+{
+  "track_id": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+  "icao24": "abc123",
+  "callsign": "GIA881",
+  "origin_country": "Indonesia",
+  "timestamp_utc": "2024-06-01T12:00:00.000000Z",
+  "lat": -6.1275,
+  "lon": 106.6537,
+  "baro_altitude_m": 10668.0,
+  "geo_altitude_m": 10700.0,
+  "velocity_ms": 250.5,
+  "true_track_deg": 180.0,
+  "vertical_rate_ms": 2.5,
+  "squawk": "1200",
+  "on_ground": false,
+  "source": "adsb",
+  "classification": "commercial",
+  "classification_confidence": 0.95,
+  "sensors_contributing": ["sdr-001", "adsb-002"],
+  "deviation_score": null,
+  "threat_flags": []
+}

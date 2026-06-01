@@ -1,0 +1,23 @@
+{
+  "mmsi": "525123456",
+  "imo": "IMO9876543",
+  "vessel_name": "MV NUSANTARA-1",
+  "vessel_type": "cargo",
+  "flag_state": "IDN",
+  "timestamp_utc": "2024-06-01T12:00:00.000000Z",
+  "lat": -6.1000,
+  "lon": 106.8800,
+  "sog_knots": 12.5,
+  "cog_deg": 45.0,
+  "heading_deg": 44.0,
+  "nav_status": "underway",
+  "destination": "Port of Tanjung Priok",
+  "eta_utc": "2024-06-02T08:00:00.000000Z",
+  "draught_m": 12.5,
+  "cargo_hazmat_class": "3",
+  "ais_class": "A",
+  "last_seen_utc": "2024-06-01T12:00:00.000000Z",
+  "ais_gap_minutes": 0.0,
+  "dark_vessel_suspect": false,
+  "anomaly_flags": []
+}

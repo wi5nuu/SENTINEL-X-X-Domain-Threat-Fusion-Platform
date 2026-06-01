@@ -1,0 +1,13 @@
+{
+  "event_id": "us2024abcd",
+  "timestamp_utc": "2024-06-01T12:00:00.000000Z",
+  "lat": -3.5,
+  "lon": 128.0,
+  "depth_km": 12.0,
+  "magnitude": 6.8,
+  "magnitude_type": "mw",
+  "location_description": "75 km NW of Ambon, Indonesia",
+  "felt_reports": 250,
+  "tsunami_warning": false,
+  "source": "usgs"
+}
