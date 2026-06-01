@@ -1,0 +1,363 @@
+version: "3.9"
+
+x-logging: &default-logging
+  driver: "json-file"
+  options:
+    max-size: "10m"
+    max-file: "3"
+
+x-healthcheck: &default-healthcheck
+  interval: 15s
+  timeout: 5s
+  retries: 3
+  start_period: 30s
+
+services:
+  postgres:
+    image: timescale/timescaledb-ha:pg16-all
+    container_name: sentinel-postgres
+    environment:
+      POSTGRES_DB: sentinel
+      POSTGRES_USER: sentinel
+      POSTGRES_PASSWORD: ${DATABASE_PASSWORD:-sentinel_pass}
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/home/postgres/pgdata
+      - ./docker/init/postgres-init.sql:/docker-entrypoint-initdb.d/postgres-init.sql:ro
+    logging: *default-logging
+    healthcheck:
+      <<: *default-healthcheck
+      test: ["CMD-SHELL", "pg_isready -U sentinel -d sentinel"]
+
+  redis:
+    image: redis:7-alpine
+    container_name: sentinel-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    command: redis-server --appendonly yes --save 60 1000
+    logging: *default-logging
+    healthcheck:
+      <<: *default-healthcheck
+      test: ["CMD", "redis-cli", "ping"]
+
+  elasticsearch:
+    image: elasticsearch:8.12.0
+    container_name: sentinel-elasticsearch
+    environment:
+      - discovery.type=single-node
+      - xpack.security.enabled=false
+      - "ES_JAVA_OPTS=-Xms1g -Xmx1g"
+    ports:
+      - "9200:9200"
+    volumes:
+      - elasticsearch_data:/usr/share/elasticsearch/data
+    logging: *default-logging
+    healthcheck:
+      <<: *default-healthcheck
+      test: ["CMD-SHELL", "curl -sf http://localhost:9200/_cluster/health || exit 1"]
+
+  zookeeper:
+    image: confluentinc/cp-zookeeper:7.6.0
+    container_name: sentinel-zookeeper
+    environment:
+      ZOOKEEPER_CLIENT_PORT: 2181
+      ZOOKEEPER_TICK_TIME: 2000
+    logging: *default-logging
+    healthcheck:
+      <<: *default-healthcheck
+      test: ["CMD-SHELL", "echo ruok | nc -w 2 localhost 2181 || exit 1"]
+
+  kafka:
+    image: confluentinc/cp-kafka:7.6.0
+    container_name: sentinel-kafka
+    depends_on:
+      zookeeper:
+        condition: service_healthy
+    ports:
+      - "9092:9092"
+      - "9093:9093"
+    environment:
+      KAFKA_BROKER_ID: 1
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092,PLAINTEXT_HOST://localhost:9093
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
+      KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
+      KAFKA_LOG_RETENTION_HOURS: 168
+      KAFKA_LOG_RETENTION_BYTES: 1073741824
+      KAFKA_NUM_PARTITIONS: 3
+      KAFKA_DEFAULT_REPLICATION_FACTOR: 1
+    volumes:
+      - kafka_data:/var/lib/kafka/data
+    logging: *default-logging
+    healthcheck:
+      <<: *default-healthcheck
+      test: ["CMD-SHELL", "kafka-broker-api-versions --bootstrap-server localhost:9092 || exit 1"]
+
+  kafka-init:
+    image: confluentinc/cp-kafka:7.6.0
+    container_name: sentinel-kafka-init
+    depends_on:
+      kafka:
+        condition: service_healthy
+    entrypoint: ["/bin/sh", "/docker/init/kafka-init.sh"]
+    volumes:
+      - ./docker/init/kafka-init.sh:/docker/init/kafka-init.sh:ro
+
+  hardhat-node:
+    image: node:20-alpine
+    container_name: sentinel-hardhat
+    ports:
+      - "8545:8545"
+    working_dir: /app
+    volumes:
+      - ./docker/init/hardhat.config.js:/app/hardhat.config.js:ro
+      - ./src/blockchain/contracts:/app/contracts:ro
+    command: >
+      sh -c "cd /app && npx hardhat node --hostname 0.0.0.0 --port 8545"
+    logging: *default-logging
+    healthcheck:
+      <<: *default-healthcheck
+      test: ["CMD", "wget", "-qO-", "http://localhost:8545"]
+
+  ipfs:
+    image: ipfs/kubo:latest
+    container_name: sentinel-ipfs
+    ports:
+      - "5001:5001"
+      - "8080:8080"
+    volumes:
+      - ipfs_data:/data/ipfs
+    logging: *default-logging
+    healthcheck:
+      <<: *default-healthcheck
+      test: ["CMD-SHELL", "ipfs id || exit 1"]
+
+  sentinel-api:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.api
+    container_name: sentinel-api
+    ports:
+      - "8000:8000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy
+      elasticsearch:
+        condition: service_healthy
+    env_file: .env
+    volumes:
+      - ./src:/app/src:ro
+      - ./models:/app/models:ro
+    logging: *default-logging
+
+  sentinel-ingestor-air:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.ingestor
+    container_name: sentinel-ingestor-air
+    depends_on:
+      kafka:
+        condition: service_healthy
+    env_file: .env
+    environment:
+      INGESTOR_TYPE: air
+    volumes:
+      - ./src:/app/src:ro
+    logging: *default-logging
+
+  sentinel-ingestor-maritime:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.ingestor
+    container_name: sentinel-ingestor-maritime
+    depends_on:
+      kafka:
+        condition: service_healthy
+    env_file: .env
+    environment:
+      INGESTOR_TYPE: maritime
+    volumes:
+      - ./src:/app/src:ro
+    logging: *default-logging
+
+  sentinel-ingestor-seismic:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.ingestor
+    container_name: sentinel-ingestor-seismic
+    depends_on:
+      kafka:
+        condition: service_healthy
+    env_file: .env
+    environment:
+      INGESTOR_TYPE: seismic
+    volumes:
+      - ./src:/app/src:ro
+    logging: *default-logging
+
+  sentinel-ingestor-rf:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.ingestor
+    container_name: sentinel-ingestor-rf
+    depends_on:
+      kafka:
+        condition: service_healthy
+    env_file: .env
+    environment:
+      INGESTOR_TYPE: rf
+    volumes:
+      - ./src:/app/src:ro
+    logging: *default-logging
+
+  sentinel-ingestor-cyber:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.ingestor
+    container_name: sentinel-ingestor-cyber
+    depends_on:
+      kafka:
+        condition: service_healthy
+    env_file: .env
+    environment:
+      INGESTOR_TYPE: cyber
+    volumes:
+      - ./src:/app/src:ro
+    logging: *default-logging
+
+  sentinel-ai-engine:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.ai
+    container_name: sentinel-ai-engine
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu]
+    depends_on:
+      kafka:
+        condition: service_healthy
+      postgres:
+        condition: service_healthy
+    env_file: .env
+    volumes:
+      - ./src:/app/src:ro
+      - ./models:/app/models:ro
+    logging: *default-logging
+
+  sentinel-response:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.api
+    container_name: sentinel-response
+    depends_on:
+      kafka:
+        condition: service_healthy
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    env_file: .env
+    volumes:
+      - ./src:/app/src:ro
+      - ./playbooks:/app/playbooks:ro
+    logging: *default-logging
+
+  sentinel-blockchain:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.api
+    container_name: sentinel-blockchain
+    depends_on:
+      hardhat-node:
+        condition: service_healthy
+      ipfs:
+        condition: service_healthy
+    env_file: .env
+    volumes:
+      - ./src:/app/src:ro
+    logging: *default-logging
+
+  sentinel-frontend:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.frontend
+    container_name: sentinel-frontend
+    ports:
+      - "3000:3000"
+    depends_on:
+      - sentinel-api
+    env_file: .env
+    volumes:
+      - ./src/frontend:/app/src:ro
+    logging: *default-logging
+
+  prometheus:
+    image: prom/prometheus:v2.51.0
+    container_name: sentinel-prometheus
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./docker/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus_data:/prometheus
+    logging: *default-logging
+
+  grafana:
+    image: grafana/grafana:10.4.0
+    container_name: sentinel-grafana
+    ports:
+      - "3001:3000"
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_PASSWORD:-sentinel_admin}
+      - GF_INSTALL_PLUGINS=grafana-piechart-panel
+    volumes:
+      - grafana_data:/var/lib/grafana
+      - ./docker/grafana/dashboards:/etc/grafana/provisioning/dashboards:ro
+      - ./docker/grafana/datasources:/etc/grafana/provisioning/datasources:ro
+    logging: *default-logging
+
+  jaeger:
+    image: jaegertracing/all-in-one:1.57
+    container_name: sentinel-jaeger
+    ports:
+      - "16686:16686"
+      - "4317:4317"
+      - "4318:4318"
+    environment:
+      - COLLECTOR_OTLP_ENABLED=true
+    logging: *default-logging
+
+  notification-service:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.api
+    container_name: sentinel-notification
+    depends_on:
+      kafka:
+        condition: service_healthy
+    env_file: .env
+    volumes:
+      - ./src:/app/src:ro
+    logging: *default-logging
+
+volumes:
+  postgres_data:
+  redis_data:
+  elasticsearch_data:
+  kafka_data:
+  ipfs_data:
+  prometheus_data:
+  grafana_data:

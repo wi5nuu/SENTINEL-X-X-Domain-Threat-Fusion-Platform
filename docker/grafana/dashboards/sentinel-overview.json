@@ -1,0 +1,36 @@
+{
+  "title": "SENTINEL - Global Threat Dashboard",
+  "uid": "sentinel-overview",
+  "panels": [
+    {
+      "title": "Events Ingested Rate",
+      "type": "graph",
+      "targets": [{"expr": "rate(sentinel_events_ingested_total[1m])", "legendFormat": "{{domain}}"}]
+    },
+    {
+      "title": "Alerts by Severity",
+      "type": "piechart",
+      "targets": [{"expr": "sentinel_alerts_generated_total", "legendFormat": "{{severity}}"}]
+    },
+    {
+      "title": "Ingestion Latency p99",
+      "type": "heatmap",
+      "targets": [{"expr": "sentinel_ingestion_latency_seconds"}]
+    },
+    {
+      "title": "Kafka Consumer Lag",
+      "type": "graph",
+      "targets": [{"expr": "sentinel_kafka_consumer_lag", "legendFormat": "{{topic}}"}]
+    },
+    {
+      "title": "Error Rate by Service",
+      "type": "graph",
+      "targets": [{"expr": "rate(sentinel_errors_total[5m])", "legendFormat": "{{service}}"}]
+    },
+    {
+      "title": "AI Inference Latency",
+      "type": "graph",
+      "targets": [{"expr": "sentinel_ai_inference_latency_seconds"}]
+    }
+  ]
+}

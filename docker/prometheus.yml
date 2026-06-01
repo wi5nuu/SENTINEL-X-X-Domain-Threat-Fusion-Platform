@@ -1,0 +1,26 @@
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+
+scrape_configs:
+  - job_name: "sentinel-api"
+    static_configs:
+      - targets: ["sentinel-api:8000"]
+    metrics_path: /metrics
+
+  - job_name: "sentinel-ingestors"
+    static_configs:
+      - targets:
+          - "sentinel-ingestor-air:8000"
+          - "sentinel-ingestor-maritime:8000"
+          - "sentinel-ingestor-seismic:8000"
+          - "sentinel-ingestor-rf:8000"
+          - "sentinel-ingestor-cyber:8000"
+
+  - job_name: "sentinel-ai-engine"
+    static_configs:
+      - targets: ["sentinel-ai-engine:8000"]
+
+  - job_name: "prometheus"
+    static_configs:
+      - targets: ["localhost:9090"]

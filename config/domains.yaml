@@ -1,0 +1,44 @@
+domains:
+  air:
+    enabled: true
+    poll_interval_seconds: 5
+    opensky_url: "https://opensky-network.org/api/states/all"
+    opensky_ws: "wss://opensky-network.org/api/states/all"
+    adsb_exchange_filter: ["military", "unknown"]
+    simulated_sdr_sample_rate: 2.4e6
+    simulated_sdr_center_freq: 1090e6
+
+  maritime:
+    enabled: true
+    poll_interval_seconds: 10
+    dark_vessel_thresholds:
+      cargo_minutes: 10
+      tanker_minutes: 6
+      passenger_minutes: 3
+
+  seismic:
+    enabled: true
+    usgs_poll_seconds: 60
+    min_magnitude: 2.5
+    noaa_swpc_poll_seconds: 60
+    noaa_kp_poll_seconds: 900
+
+  rf:
+    enabled: true
+    scan_interval_seconds: 1
+    monitor_bands_mhz: [433, 915, 2400, 5800, 1090]
+
+  cyber:
+    enabled: true
+    otx_poll_seconds: 300
+    abuseipdb_poll_seconds: 3600
+    ics_ports: [102, 502, 20000, 44818]
+
+alerts:
+  debounce_seconds: 30
+  max_alerts_per_minute: 100
+  escalation_check_interval_seconds: 60
+
+blockchain:
+  chain_id: 31337
+  gas_limit: 200000
