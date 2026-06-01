@@ -6,11 +6,6 @@ import io
 from datetime import datetime
 from typing import Optional
 import httpx
-from web3 import Web3
-try:
-    from web3.middleware import geth_poa_middleware
-except ImportError:
-    geth_poa_middleware = None
 
 from src.common.config import settings
 from src.common.logging import setup_logging
@@ -31,12 +26,18 @@ THREAT_LEDGER_ABI = [
 
 class BlockchainService:
     def __init__(self):
+        from web3 import Web3
         self.w3: Optional[Web3] = None
         self.ledger_contract: Optional[object] = None
         self.account: Optional[object] = None
 
     async def connect(self):
         try:
+            from web3 import Web3
+            try:
+                from web3.middleware import geth_poa_middleware
+            except ImportError:
+                geth_poa_middleware = None
             self.w3 = Web3(Web3.HTTPProvider(settings.ethereum_rpc_url))
             self.w3.middleware_onion.inject(geth_poa_middleware, layer=0)
             if self.w3.is_connected():
