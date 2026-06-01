@@ -1,0 +1,32 @@
+name: "Maritime Dark Vessel — Critical Response"
+trigger:
+  threat_class: CRITICAL
+  compound_pattern: "Maritime Deception Stack"
+
+phases:
+  - name: "Immediate Assessment (0-3 min)"
+    automated_steps:
+      - action: fetch_sar_imagery
+        params: {area: "{{vessel.last_known_position}}", radius_km: 50}
+      - action: cross_reference_vessel_database
+        params: {mmsi: "{{vessel.mmsi}}", sources: ["IMO", "Equasis", "Lloyd's"]}
+      - action: notify_coast_guard_api
+        params: {incident_id: "{{threat_id}}", priority: "URGENT"}
+    operator_actions_required:
+      - "Confirm vessel identity"
+      - "Determine if vessel carries hazardous cargo"
+
+  - name: "Response Coordination (3-15 min)"
+    automated_steps:
+      - action: create_exclusion_zone_geofence
+        params: {center: "{{vessel.last_known_position}}", radius_nm: 5}
+      - action: tasking_patrol_asset
+        params: {asset_type: "maritime_patrol_aircraft", priority: "URGENT"}
+    operator_actions_required:
+      - "Approve or reject geofence activation"
+      - "Initiate comms with nearest coast guard"
+
+post_incident:
+  - action: generate_pdf_report
+  - action: blockchain_finalize_evidence_chain
+  - action: debrief_session_scheduled

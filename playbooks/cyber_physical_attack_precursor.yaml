@@ -1,0 +1,32 @@
+name: "Cyber-Physical Attack Precursor"
+trigger:
+  threat_class: CRITICAL
+  compound_pattern: "Infrastructure Attack Precursor"
+
+phases:
+  - name: "Immediate Isolation (0-5 min)"
+    automated_steps:
+      - action: isolate_ics_network
+        params: {segment: "all_critical_infrastructure"}
+      - action: alert_cyber_response_team
+        params: {severity: "CRITICAL"}
+      - action: enable_full_packet_capture
+        params: {duration_minutes: 60}
+    operator_actions_required:
+      - "Confirm network isolation"
+      - "Verify backup control systems operational"
+
+  - name: "Investigation & Response (5-30 min)"
+    automated_steps:
+      - action: forensic_memory_acquisition
+        params: {targets: ["plc_gateway", "historian_server"]}
+      - action: correlate_with_physical_domain
+        params: {time_window_minutes: 120}
+    operator_actions_required:
+      - "Review forensic findings"
+      - "Coordinate with physical security team"
+
+post_incident:
+  - action: generate_pdf_report
+  - action: blockchain_finalize_evidence_chain
+  - action: schedule_vulnerability_assessment
