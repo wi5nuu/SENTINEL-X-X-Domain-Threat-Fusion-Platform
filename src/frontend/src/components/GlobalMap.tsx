@@ -5,54 +5,46 @@ import Globe3D from "./Globe3D";
 
 type Track = {
   lat: number; lon: number; label?: string;
-  is_missile?: boolean;
-  threat_status?: "PREDICTED" | "CONFIRMED";
+  is_missile?: boolean; threat_status?: "PREDICTED" | "CONFIRMED";
   origin_lat?: number; origin_lon?: number; origin_name?: string;
   target_lat?: number; target_lon?: number; target_name?: string;
-  flight_progress_pct?: number; // 0 to 100
-  speed_mach?: number; heading?: number;
-  missile_type?: string; missile_id?: string;
-  domain?: string; classification?: string;
-  launch_time?: string;
+  flight_progress_pct?: number; speed_mach?: number; heading?: number;
+  missile_type?: string; missile_id?: string; domain?: string; classification?: string;
 };
 
-const STRATEGIC_BASES = [
-  { name: "Natuna", lat: 3.9036, lon: 108.3886, country: "ID" },
-  { name: "Guam", lat: 13.4443, lon: 144.7937, country: "US" },
-  { name: "Norfolk", lat: 36.8911, lon: -76.2922, country: "US" },
-  { name: "Sevastopol", lat: 44.6167, lon: 33.525, country: "RU" },
-  { name: "Ramstein", lat: 49.4447, lon: 7.5889, country: "DE" },
-  { name: "Yulin", lat: 18.2167, lon: 109.5167, country: "CN" },
+// PRECISE GLOBAL MILITARY DATASET (Representing major nations)
+const GLOBAL_BASES = [
+  { name: "Halim Perdanakusuma", lat: -6.26, lon: 106.88, country: "ID" },
+  { name: "Pentagon", lat: 38.87, lon: -77.05, country: "US" },
+  { name: "Znamensky", lat: 55.75, lon: 37.61, country: "RU" },
+  { name: "Bayi Building", lat: 39.90, lon: 116.39, country: "CN" },
+  { name: "Northwood HQ", lat: 51.60, lon: -0.42, country: "UK" },
+  { name: "Balard", lat: 48.83, lon: 2.27, country: "FR" },
+  { name: "New Delhi HQ", lat: 28.61, lon: 77.20, country: "IN" },
+  { name: "Ichigaya", lat: 35.69, lon: 139.72, country: "JP" },
+  { name: "Seoul HQ", lat: 37.56, lon: 126.97, country: "KR" },
+  { name: "Brasilia HQ", lat: -15.79, lon: -47.88, country: "BR" },
+  { name: "Cairo HQ", lat: 30.04, lon: 31.23, country: "EG" },
+  { name: "Canberra HQ", lat: -35.28, lon: 149.13, country: "AU" },
+  { name: "Pretoria HQ", lat: -25.74, lon: 28.18, country: "ZA" },
 ];
 
-const ICON_SVG = (color: string, size = 10, label = "") => L.divIcon({
-  className: "",
-  html: `<div style="width:${size}px;height:${size}px;background:${color};border:1px solid white;display:flex;align-items:center;justify-content:center;color:white;font-size:7px;font-weight:bold;border-radius:50%">${label}</div>`,
-  iconSize: [size, size],
-  iconAnchor: [size/2, size/2],
-});
+// Professional SVG Bunker Icon
+const BUNKER_ICON_SVG = `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#FF4444" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4 22V10l8-8 8 8v12M12 22V10"/></svg>`;
 
 const ICONS = {
-  military: ICON_SVG("#FF0000", 12, "⚔"),
-  warship: ICON_SVG("#22C55E", 12, "⚓"),
-  missile: ICON_SVG("#FF3300", 14, "M"),
-  uav: ICON_SVG("#F59E0B", 10, "🛸"),
-  base: ICON_SVG("#FF4444", 10, "★"),
+  base: L.divIcon({ className: "", html: `<div style="color:red;">${BUNKER_ICON_SVG}</div>`, iconSize: [18, 18], iconAnchor: [9, 9] }),
+  missile: L.divIcon({ className: "", html: `<div style="color:red; font-size:14px;">M</div>`, iconSize: [14, 14] }),
+  military: L.divIcon({ className: "", html: `<div style="color:red; font-size:12px;">⚔</div>`, iconSize: [12, 12] }),
+  warship: L.divIcon({ className: "", html: `<div style="color:green; font-size:12px;">⚓</div>`, iconSize: [12, 12] }),
+  uav: L.divIcon({ className: "", html: `<div style="color:orange; font-size:10px;">🛸</div>`, iconSize: [10, 10] }),
 };
-
-function getIcon(t: Track): L.DivIcon {
-  if (t.is_missile) return ICONS.missile;
-  if (t.classification === "uav") return ICONS.uav;
-  if (t.classification === "military") {
-    return t.domain === "maritime" ? ICONS.warship : ICONS.military;
-  }
-  return ICON_SVG("#00D4FF", 8);
-}
 
 export default function GlobalMap({ tracks = [], center, zoom, entityFilter = "all" }: any) {
   const containerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<L.Map | null>(null);
   const markerLayer = useRef<L.LayerGroup | null>(null);
+  const baseLayer = useRef<L.LayerGroup | null>(null);
   const trajectoryLayer = useRef<L.LayerGroup | null>(null);
   const [is3D, setIs3D] = useState(false);
 
@@ -64,54 +56,39 @@ export default function GlobalMap({ tracks = [], center, zoom, entityFilter = "a
 
   useEffect(() => {
     if (!containerRef.current || mapRef.current) return;
-    
     const map = L.map(containerRef.current, { center: [20, 0], zoom: 3, attributionControl: false, worldCopyJump: true });
     L.tileLayer("https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png").addTo(map);
-    
     mapRef.current = map;
     markerLayer.current = L.layerGroup().addTo(map);
+    baseLayer.current = L.layerGroup().addTo(map);
     trajectoryLayer.current = L.layerGroup().addTo(map);
-
     return () => { map.remove(); mapRef.current = null; };
   }, []);
 
   useEffect(() => {
-    if (!markerLayer.current || !trajectoryLayer.current) return;
-    
+    if (!markerLayer.current || !baseLayer.current || !trajectoryLayer.current) return;
     markerLayer.current.clearLayers();
+    baseLayer.current.clearLayers();
     trajectoryLayer.current.clearLayers();
 
+    // Render Accurate Bases
     if (entityFilter === "all" || entityFilter === "bases") {
-      STRATEGIC_BASES.forEach(b => {
-        L.circleMarker([b.lat, b.lon], { radius: 5, color: "red", fillColor: "red", fillOpacity: 1 })
-         .bindPopup(`<b>${b.name}</b>`).addTo(markerLayer.current!);
+      GLOBAL_BASES.forEach(b => {
+        L.marker([b.lat, b.lon], { icon: ICONS.base })
+         .bindPopup(`<div style="font-family:monospace;font-size:10px"><b>${b.name}</b><br/>HQ: ${b.country}</div>`)
+         .addTo(baseLayer.current!);
       });
     }
 
+    // Render Tracks
     tracks.forEach((t: Track) => {
-      // Trajectory Rendering for ALL tracks with origin/target
-      if (t.origin_lat && t.target_lat) {
-        let color = t.threat_status === "CONFIRMED" ? "red" : (t.missile_type === "Hypersonic" || t.missile_type === "ICBM" ? "purple" : "gold");
-
-        // 1. Line
-        L.polyline([[t.origin_lat, t.origin_lon!], [t.target_lat, t.target_lon!]], {
-          color: color,
-          weight: 2,
-        }).addTo(trajectoryLayer.current!)
-          .bindPopup(`
-            <div style="font-family:monospace;font-size:10px">
-              <b>${t.missile_id || "ASSET"}</b><br/>
-              Type: ${t.missile_type || "N/A"}<br/>
-              Status: ${t.threat_status || "ACTIVE"}<br/>
-              Speed: ${(t.speed_mach! * 1235).toFixed(0)} km/h
-            </div>
-          `);
-
-        // 2. Missile Icon + Telemetry Label
+      if (t.is_missile && t.origin_lat && t.target_lat) {
+        const color = t.threat_status === "CONFIRMED" ? "red" : (t.missile_type === "Hypersonic" || t.missile_type === "ICBM" ? "purple" : "gold");
+        L.polyline([[t.origin_lat, t.origin_lon!], [t.target_lat, t.target_lon!]], { color, weight: 2 }).addTo(trajectoryLayer.current!);
+        
         const progress = (t.flight_progress_pct || 0) / 100;
         const curLat = t.origin_lat + (t.target_lat - t.origin_lat) * progress;
         const curLon = t.origin_lon! + (t.target_lon! - t.origin_lon!) * progress;
-        
         const dy = t.target_lat - t.origin_lat;
         const dx = (t.target_lon! - t.origin_lon!) * Math.cos(t.origin_lat * Math.PI / 180);
         const heading = (Math.atan2(dy, dx) * 180 / Math.PI) - 90;
@@ -119,23 +96,14 @@ export default function GlobalMap({ tracks = [], center, zoom, entityFilter = "a
         const missileIcon = L.divIcon({
           className: "",
           html: `<div style="display:flex; flex-direction:column; align-items:center;">
-                   <div style="transform:rotate(${heading}deg);">
-                     <svg width="20" height="20" viewBox="0 0 24 24" fill="white">
-                       <path d="M12 2L14 8V20L12 22L10 20V8L12 2Z"/>
-                     </svg>
-                   </div>
-                   <div style="font-family:monospace; font-size:9px; background:rgba(0,0,0,0.8); color:white; padding:2px; border:1px solid ${color}; border-radius:3px; white-space:nowrap; font-style: normal; margin-top:2px;">
-                     ${t.missile_id || "MSL"}<br/>
-                     ${(t.speed_mach! * 1235).toFixed(0)} km/h
-                   </div>
+                   <div style="transform:rotate(${heading}deg);"><svg width="16" height="16" viewBox="0 0 24 24" fill="white"><path d="M12 2L14 8V20L12 22L10 20V8L12 2Z"/></svg></div>
+                   <div style="font-family:monospace; font-size:9px; background:rgba(0,0,0,0.8); color:white; padding:2px; border:1px solid ${color}; border-radius:3px; font-style: normal;">${t.missile_id}</div>
                  </div>`
         });
         L.marker([curLat, curLon], { icon: missileIcon }).addTo(trajectoryLayer.current!);
       }
       
-      // Marker
-      if (entityFilter !== "bases") {
-        if (entityFilter === "warships" && (t.domain !== "maritime" || t.classification !== "military")) return;
+      if (entityFilter !== "bases" && !(entityFilter === "warships" && t.domain !== "maritime")) {
         L.circleMarker([t.lat, t.lon], { radius: 3, color: "cyan" }).addTo(markerLayer.current!);
       }
     });
