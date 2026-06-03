@@ -1,6 +1,6 @@
 from sqlalchemy.ext.asyncio import create_async_engine, async_sessionmaker, AsyncSession
 from sqlalchemy.orm import DeclarativeBase
-from sqlalchemy import Column, String, Float, Boolean, DateTime, Integer, JSON, Text, Enum as SAEnum
+from sqlalchemy import Column, String, Float, Boolean, DateTime, Integer, JSON, Text, Enum as SAEnum, event, text, PrimaryKeyConstraint
 import enum
 from datetime import datetime
 import uuid
@@ -34,11 +34,12 @@ class ThreatLevelDB(enum.Enum):
 class AirTrackDB(Base):
     __tablename__ = "air_tracks"
 
-    id = Column(String, primary_key=True, default=lambda: str(uuid.uuid4()))
+    id = Column(String, default=lambda: str(uuid.uuid4()))
     icao24 = Column(String(6), nullable=False, index=True)
     callsign = Column(String, nullable=True)
     origin_country = Column(String, default="")
     timestamp_utc = Column(DateTime(timezone=True), nullable=False, index=True)
+    __table_args__ = (PrimaryKeyConstraint("id", "timestamp_utc"),)
     lat = Column(Float, nullable=False)
     lon = Column(Float, nullable=False)
     baro_altitude_m = Column(Float, nullable=True)
@@ -55,21 +56,17 @@ class AirTrackDB(Base):
     deviation_score = Column(Float, nullable=True)
     threat_flags = Column(JSON, default=list)
 
-    __table_args__ = (
-        {"postgresql_hypertable": {"main_table": True, "time_column": "timestamp_utc"}},
-    )
-
-
 class VesselTrackDB(Base):
     __tablename__ = "vessel_tracks"
 
-    id = Column(String, primary_key=True, default=lambda: str(uuid.uuid4()))
+    id = Column(String, default=lambda: str(uuid.uuid4()))
     mmsi = Column(String(9), nullable=False, index=True)
     imo = Column(String, nullable=True)
     vessel_name = Column(String, default="")
     vessel_type = Column(String, default="unknown")
     flag_state = Column(String, default="")
     timestamp_utc = Column(DateTime(timezone=True), nullable=False, index=True)
+    __table_args__ = (PrimaryKeyConstraint("id", "timestamp_utc"),)
     lat = Column(Float, nullable=False)
     lon = Column(Float, nullable=False)
     sog_knots = Column(Float, default=0.0)
@@ -86,16 +83,12 @@ class VesselTrackDB(Base):
     dark_vessel_suspect = Column(Boolean, default=False)
     anomaly_flags = Column(JSON, default=list)
 
-    __table_args__ = (
-        {"postgresql_hypertable": {"main_table": True, "time_column": "timestamp_utc"}},
-    )
-
-
 class SeismicEventDB(Base):
     __tablename__ = "seismic_events"
 
-    id = Column(String, primary_key=True, default=lambda: str(uuid.uuid4()))
+    id = Column(String, default=lambda: str(uuid.uuid4()))
     timestamp_utc = Column(DateTime(timezone=True), nullable=False, index=True)
+    __table_args__ = (PrimaryKeyConstraint("id", "timestamp_utc"),)
     lat = Column(Float, nullable=False)
     lon = Column(Float, nullable=False)
     depth_km = Column(Float, nullable=False)
@@ -105,11 +98,6 @@ class SeismicEventDB(Base):
     felt_reports = Column(Integer, default=0)
     tsunami_warning = Column(Boolean, default=False)
     source = Column(String, default="usgs")
-
-    __table_args__ = (
-        {"postgresql_hypertable": {"main_table": True, "time_column": "timestamp_utc"}},
-    )
-
 
 class AlertDB(Base):
     __tablename__ = "alerts"
@@ -129,8 +117,41 @@ class AlertDB(Base):
     acknowledged_at = Column(DateTime(timezone=True), nullable=True)
 
 
+class ResponseActionDB(Base):
+    __tablename__ = "response_actions"
+
+    id = Column(String, primary_key=True, default=lambda: str(uuid.uuid4()))
+    action_type = Column(String, nullable=False)
+    target_id = Column(String, nullable=True)
+    requested_at = Column(DateTime(timezone=True), default=datetime.utcnow)
+    requested_by = Column(String, nullable=False)
+    approvals = Column(JSON, default=list) # List of operator_ids
+    required_approvals = Column(Integer, default=2)
+    status = Column(String, default="PENDING") # PENDING, APPROVED, EXECUTED, CANCELLED
+    metadata_json = Column(JSON, default=dict)
+
+
+def _create_hypertable(target, connection, **kw):
+    connection.execute(text(f"SELECT create_hypertable('{target.name}', 'timestamp_utc', if_not_exists => TRUE)"))
+
+
+_models_with_hypertables = []
+
+
+def register_hypertable(model):
+    _models_with_hypertables.append(model)
+    event.listen(model.__table__, "after_create", _create_hypertable)
+
+
+register_hypertable(AirTrackDB)
+register_hypertable(VesselTrackDB)
+register_hypertable(SeismicEventDB)
+
+
 async def init_db():
     async with engine.begin() as conn:
+        for tbl in ("air_tracks", "vessel_tracks", "seismic_events"):
+            await conn.execute(text(f"DROP TABLE IF EXISTS {tbl} CASCADE"))
         await conn.run_sync(Base.metadata.create_all)
 
 
