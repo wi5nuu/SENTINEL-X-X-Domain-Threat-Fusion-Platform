@@ -100,37 +100,35 @@ services:
       test: ["CMD-SHELL", "kafka-broker-api-versions --bootstrap-server localhost:9092 || exit 1"]
 
   kafka-init:
-    image: confluentinc/cp-kafka:7.6.0
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.kafka-init
     container_name: sentinel-kafka-init
     depends_on:
       kafka:
         condition: service_healthy
-    entrypoint: ["/bin/sh", "/docker/init/kafka-init.sh"]
-    volumes:
-      - ./docker/init/kafka-init.sh:/docker/init/kafka-init.sh:ro
 
   hardhat-node:
-    image: node:20-alpine
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.hardhat
     container_name: sentinel-hardhat
     ports:
       - "8545:8545"
-    working_dir: /app
-    volumes:
-      - ./docker/init/hardhat.config.js:/app/hardhat.config.js:ro
-      - ./src/blockchain/contracts:/app/contracts:ro
-    command: >
-      sh -c "cd /app && npx hardhat node --hostname 0.0.0.0 --port 8545"
     logging: *default-logging
     healthcheck:
-      <<: *default-healthcheck
-      test: ["CMD", "wget", "-qO-", "http://localhost:8545"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 10s
+      test: ["CMD-SHELL", "nc -z 127.0.0.1 8545"]
 
   ipfs:
     image: ipfs/kubo:latest
     container_name: sentinel-ipfs
     ports:
       - "5001:5001"
-      - "8080:8080"
+      - "8081:8080"
     volumes:
       - ipfs_data:/data/ipfs
     logging: *default-logging
@@ -155,9 +153,8 @@ services:
       elasticsearch:
         condition: service_healthy
     env_file: .env
-    volumes:
-      - ./src:/app/src:ro
-      - ./models:/app/models:ro
+
+
     logging: *default-logging
 
   sentinel-ingestor-air:
@@ -171,8 +168,7 @@ services:
     env_file: .env
     environment:
       INGESTOR_TYPE: air
-    volumes:
-      - ./src:/app/src:ro
+
     logging: *default-logging
 
   sentinel-ingestor-maritime:
@@ -186,8 +182,7 @@ services:
     env_file: .env
     environment:
       INGESTOR_TYPE: maritime
-    volumes:
-      - ./src:/app/src:ro
+
     logging: *default-logging
 
   sentinel-ingestor-seismic:
@@ -201,8 +196,7 @@ services:
     env_file: .env
     environment:
       INGESTOR_TYPE: seismic
-    volumes:
-      - ./src:/app/src:ro
+
     logging: *default-logging
 
   sentinel-ingestor-rf:
@@ -216,8 +210,7 @@ services:
     env_file: .env
     environment:
       INGESTOR_TYPE: rf
-    volumes:
-      - ./src:/app/src:ro
+
     logging: *default-logging
 
   sentinel-ingestor-cyber:
@@ -231,8 +224,7 @@ services:
     env_file: .env
     environment:
       INGESTOR_TYPE: cyber
-    volumes:
-      - ./src:/app/src:ro
+
     logging: *default-logging
 
   sentinel-ai-engine:
@@ -240,22 +232,14 @@ services:
       context: .
       dockerfile: docker/Dockerfile.ai
     container_name: sentinel-ai-engine
-    deploy:
-      resources:
-        reservations:
-          devices:
-            - driver: nvidia
-              count: all
-              capabilities: [gpu]
     depends_on:
       kafka:
         condition: service_healthy
       postgres:
         condition: service_healthy
     env_file: .env
-    volumes:
-      - ./src:/app/src:ro
-      - ./models:/app/models:ro
+
+
     logging: *default-logging
 
   sentinel-response:
@@ -271,9 +255,6 @@ services:
       redis:
         condition: service_healthy
     env_file: .env
-    volumes:
-      - ./src:/app/src:ro
-      - ./playbooks:/app/playbooks:ro
     logging: *default-logging
 
   sentinel-blockchain:
@@ -287,8 +268,7 @@ services:
       ipfs:
         condition: service_healthy
     env_file: .env
-    volumes:
-      - ./src:/app/src:ro
+
     logging: *default-logging
 
   sentinel-frontend:
@@ -301,18 +281,20 @@ services:
     depends_on:
       - sentinel-api
     env_file: .env
-    volumes:
-      - ./src/frontend:/app/src:ro
     logging: *default-logging
 
   prometheus:
-    image: prom/prometheus:v2.51.0
+    build:
+      context: ./docker
+      dockerfile: Dockerfile.prometheus
     container_name: sentinel-prometheus
     ports:
       - "9090:9090"
     volumes:
-      - ./docker/prometheus.yml:/etc/prometheus/prometheus.yml:ro
       - prometheus_data:/prometheus
+    command:
+      - "--config.file=/etc/prometheus/prometheus.yml"
+      - "--web.external-url=http://localhost/prometheus/"
     logging: *default-logging
 
   grafana:
@@ -323,6 +305,8 @@ services:
     environment:
       - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_PASSWORD:-sentinel_admin}
       - GF_INSTALL_PLUGINS=grafana-piechart-panel
+      - GF_SERVER_ROOT_URL=http://localhost/grafana/
+      - GF_SERVER_SERVE_FROM_SUB_PATH=true
     volumes:
       - grafana_data:/var/lib/grafana
       - ./docker/grafana/dashboards:/etc/grafana/provisioning/dashboards:ro
@@ -338,6 +322,8 @@ services:
       - "4318:4318"
     environment:
       - COLLECTOR_OTLP_ENABLED=true
+    command:
+      - "--query.base-path=/jaeger"
     logging: *default-logging
 
   notification-service:
@@ -349,9 +335,59 @@ services:
       kafka:
         condition: service_healthy
     env_file: .env
-    volumes:
-      - ./src:/app/src:ro
+
     logging: *default-logging
+
+  sentinel-synthetic:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.synthetic
+    container_name: sentinel-synthetic
+    depends_on:
+      kafka:
+        condition: service_healthy
+    env_file: .env
+
+    logging: *default-logging
+
+  gateway:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.gateway
+    container_name: sentinel-gateway
+    ports:
+      - "80:80"
+    depends_on:
+      - sentinel-frontend
+      - sentinel-api
+      - grafana
+      - prometheus
+      - jaeger
+    logging: *default-logging
+
+  sentinel-nasa:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.nasa
+    container_name: sentinel-nasa
+    depends_on:
+      kafka:
+        condition: service_healthy
+    env_file: .env
+    logging: *default-logging
+
+  sentinel-ai-trainer:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.ai
+    container_name: sentinel-ai-trainer
+    environment:
+      - TRAIN_MODEL=true
+      - MODEL_PATH=/app/models/threat_fusion_v1.pt
+    env_file: .env
+    logging: *default-logging
+    profiles:
+      - train
 
 volumes:
   postgres_data:
