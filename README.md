@@ -88,6 +88,33 @@ Sistem mengintegrasikan data dari 6 domain utama:
 
 ---
 
+## Struktur Proyek
+
+Proyek ini memiliki beberapa modul yang terbagi ke dalam berbagai direktori untuk memudahkan pengembangan dan pemisahan *concerns*:
+
+- **`src/`** — *Source code* utama dari keseluruhan sistem SENTINEL-X:
+  - **`api/`**: Backend API berbasis FastAPI.
+  - **`frontend/`**: Antarmuka pengguna *Tactical Dashboard* menggunakan React.
+  - **`ai_engine/`**: Model *machine learning* dan pipeline PyTorch untuk *Threat Fusion*.
+  - **`ingestors/`**: Modul integrasi yang menarik data dari berbagai domain (Udara, Laut, RF, Siber, dll).
+  - **`blockchain/`**: *Smart contracts* Ethereum dan integrasi IPFS untuk *immutable logging*.
+  - **`intelligence/`**: Modul intelijen lanjutan (seperti *CBRN-Watch*, *Dark-Fleet-Tracker*).
+  - **`response/`**: Sistem pengelola otomatisasi *response playbook*.
+  - **`synthetic_generator/`**: Modul pembuat data sintetis untuk keperluan pengujian.
+  - **`common/`**: *Library* dan kode utilitas umum.
+- **`config/`** — Direktori sentral untuk manajemen konfigurasi environment.
+- **`docker/`** — Kumpulan *Dockerfiles*, skrip *entrypoint*, dan konfigurasi layanan (Nginx, Prometheus, dll).
+- **`deploy/`** — *Script* untuk otomatisasi *deployment* infrastruktur menggunakan Ansible dan Terraform.
+- **`models/`** — Definisi *schema* dan struktur data (Pydantic, SQLAlchemy).
+- **`migrations/`** — Skrip migrasi *database* otomatis dengan Alembic.
+- **`playbooks/`** — Kumpulan YAML Playbook untuk menangani respons insiden.
+- **`public/`** — Aset publik statis dan referensi visual (seperti gambar dokumentasi).
+- **`scripts/`** — Skrip utilitas pengembangan, instalasi, dan pemeliharaan.
+- **`tests/`** — Kumpulan *unit test* dan *integration test* menggunakan Pytest.
+- **`examples/`** — Contoh kode dan penggunaan integrasi data untuk referensi.
+
+---
+
 ## Memulai
 
 ### Menjalankan dengan Docker
