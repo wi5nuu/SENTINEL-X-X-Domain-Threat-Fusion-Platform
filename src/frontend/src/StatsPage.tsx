@@ -111,8 +111,8 @@ function ArcGauge({
           fontFamily: "'JetBrains Mono', monospace",
           textShadow: `0 0 12px ${color}88`,
         }}>{Math.round(value)}</div>
-        <div style={{ fontSize: size * 0.09, color: "var(--text-muted)", fontWeight: 500, textAlign: "center", padding: "0 8px" }}>{label}</div>
-        {sublabel && <div style={{ fontSize: size * 0.08, color, opacity: 0.7 }}>{sublabel}</div>}
+        <div style={{ fontSize: size * 0.09, color: "var(--text-muted)", fontWeight: 500, textAlign: "center", padding: "0 8px", textTransform: "uppercase", letterSpacing: "0.05em" }}>{label}</div>
+        {sublabel && <div style={{ fontSize: size * 0.08, color, opacity: 0.7, letterSpacing: "0.05em" }}>{sublabel}</div>}
       </div>
     </div>
   );
@@ -208,18 +208,18 @@ function GlowBar({
   pct: number; color: string; label: string; value: string;
 }) {
   return (
-    <div style={{ marginBottom: 6 }}>
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 2 }}>
-        <span style={{ fontSize: 10, color: "var(--text-secondary)", fontWeight: 500 }}>{label}</span>
-        <span style={{ fontSize: 10, color, fontWeight: 700, fontFamily: "'JetBrains Mono', monospace" }}>{value}</span>
+    <div style={{ marginBottom: 8 }}>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 4 }}>
+        <span style={{ fontSize: 10, color: "var(--text-secondary)", fontWeight: 600, letterSpacing: "0.05em", textTransform: "uppercase" }}>{label}</span>
+        <span style={{ fontSize: 11, color, fontWeight: 700, fontFamily: "'JetBrains Mono', monospace" }}>{value}</span>
       </div>
-      <div style={{ height: 3, background: "rgba(255,255,255,0.05)", borderRadius: 4, overflow: "hidden", position: "relative" }}>
+      <div style={{ height: 4, background: "rgba(255,255,255,0.04)", borderRadius: 4, overflow: "hidden", position: "relative", boxShadow: "inset 0 1px 2px rgba(0,0,0,0.5)" }}>
         <div style={{
           position: "absolute", left: 0, top: 0, height: "100%",
           width: `${Math.min(100, pct)}%`,
-          background: `linear-gradient(90deg, ${color}88, ${color})`,
+          background: `linear-gradient(90deg, ${color}66, ${color})`,
           borderRadius: 4,
-          boxShadow: `0 0 4px ${color}66`,
+          boxShadow: `0 0 8px ${color}88`,
           transition: "width 0.8s cubic-bezier(0.4, 0, 0.2, 1)",
         }} />
       </div>
@@ -228,66 +228,54 @@ function GlowBar({
 }
 
 /* ─── Hexagonal stat badge ────────────────────────────────────── */
-function HexStat({ label, value, color }: { label: string; value: string | number; color: string }) {
+function HexStat({ label, value, color, icon }: { label: string; value: string | number; color: string; icon?: string }) {
   return (
     <div style={{
       display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center",
-      padding: "8px 6px", gap: 2, position: "relative",
-      background: `linear-gradient(135deg, ${color}0D, ${color}06)`,
-      border: `1px solid ${color}25`,
-      borderRadius: 8,
-      transition: "all 0.2s ease",
+      padding: "12px 6px", gap: 4, position: "relative",
+      background: `linear-gradient(135deg, ${color}11, ${color}05)`,
+      border: `1px solid ${color}30`,
+      borderRadius: 10,
+      transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
+      cursor: "default"
     }}
       onMouseEnter={e => {
-        (e.currentTarget as HTMLDivElement).style.borderColor = `${color}55`;
-        (e.currentTarget as HTMLDivElement).style.boxShadow = `0 0 10px ${color}18, inset 0 0 10px ${color}05`;
+        (e.currentTarget as HTMLDivElement).style.borderColor = `${color}66`;
+        (e.currentTarget as HTMLDivElement).style.boxShadow = `0 0 15px ${color}25, inset 0 0 10px ${color}10`;
+        (e.currentTarget as HTMLDivElement).style.transform = "translateY(-2px)";
       }}
       onMouseLeave={e => {
-        (e.currentTarget as HTMLDivElement).style.borderColor = `${color}25`;
+        (e.currentTarget as HTMLDivElement).style.borderColor = `${color}30`;
         (e.currentTarget as HTMLDivElement).style.boxShadow = "none";
+        (e.currentTarget as HTMLDivElement).style.transform = "none";
       }}
     >
       <div style={{
-        fontSize: 16, fontWeight: 700, color,
+        fontSize: 20, fontWeight: 800, color,
         fontFamily: "'JetBrains Mono', monospace", lineHeight: 1,
-        textShadow: `0 0 6px ${color}66`,
+        textShadow: `0 0 8px ${color}66`,
       }}>{value}</div>
-      <div style={{ fontSize: 8, color: "var(--text-muted)", fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.08em", textAlign: "center" }}>{label}</div>
-    </div>
-  );
-}
-
-/* ─── Live pulse indicator ────────────────────────────────────── */
-function PulseDot({ color, label, value }: { color: string; label: string; value: string }) {
-  return (
-    <div style={{ display: "flex", alignItems: "center", gap: 8, padding: "4px 0", borderBottom: "1px solid rgba(255,255,255,0.03)" }}>
-      <div style={{ position: "relative", flexShrink: 0 }}>
-        <div style={{
-          width: 6, height: 6, borderRadius: "50%", background: color,
-          boxShadow: `0 0 4px ${color}`,
-        }} />
-      </div>
-      <span style={{ flex: 1, fontSize: 10, color: "var(--text-secondary)" }}>{label}</span>
-      <span style={{ fontSize: 10, color, fontWeight: 700, fontFamily: "'JetBrains Mono', monospace" }}>{value}</span>
+      <div style={{ fontSize: 9, color: "var(--text-muted)", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em", textAlign: "center" }}>{label}</div>
     </div>
   );
 }
 
 /* ─── Glass panel wrapper ─────────────────────────────────────── */
 function GlassPanel({
-  children, style, accent,
+  children, style, accent, className
 }: {
-  children: React.ReactNode; style?: React.CSSProperties; accent?: string;
+  children: React.ReactNode; style?: React.CSSProperties; accent?: string; className?: string;
 }) {
   return (
-    <div style={{
-      background: "linear-gradient(135deg, rgba(14,26,43,0.9), rgba(10,16,30,0.95))",
-      border: `1px solid ${accent ? `${accent}20` : "rgba(255,255,255,0.07)"}`,
-      borderRadius: 12,
-      backdropFilter: "blur(12px)",
+    <div className={className} style={{
+      background: "linear-gradient(145deg, rgba(16,28,45,0.95), rgba(10,18,32,0.98))",
+      border: `1px solid ${accent ? `${accent}30` : "rgba(255,255,255,0.08)"}`,
+      borderRadius: 16,
+      backdropFilter: "blur(16px)",
       boxShadow: accent
-        ? `0 2px 12px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.05), 0 0 20px ${accent}08`
-        : "0 2px 12px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.05)",
+        ? `0 4px 20px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.1), 0 0 25px ${accent}15`
+        : "0 4px 20px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.05)",
+      transition: "all 0.3s ease",
       ...style,
     }}>
       {children}
@@ -299,13 +287,13 @@ function GlassPanel({
 function SectionLabel({ children, color = "var(--text-muted)" }: { children: React.ReactNode; color?: string; }) {
   return (
     <div style={{
-      display: "flex", alignItems: "center", gap: 6,
-      fontSize: 9, fontWeight: 700, color,
-      textTransform: "uppercase", letterSpacing: "0.1em",
-      marginBottom: 8,
+      display: "flex", alignItems: "center", gap: 8,
+      fontSize: 10, fontWeight: 800, color,
+      textTransform: "uppercase", letterSpacing: "0.15em",
+      marginBottom: 16,
     }}>
       <span>{children}</span>
-      <div style={{ flex: 1, height: 1, background: `linear-gradient(90deg, ${color}20, transparent)`, marginLeft: 4 }} />
+      <div style={{ flex: 1, height: 1, background: `linear-gradient(90deg, ${color}30, transparent)`, marginLeft: 4 }} />
     </div>
   );
 }
@@ -333,25 +321,26 @@ export default function StatsPage({ alerts, tracks, dashboard, eventsPerHr, thre
   const avgConfidence = alerts.length
     ? (alerts.reduce((s, a) => s + (a.confidence || 0.5), 0) / alerts.length) * 100
     : 0;
+  
   const missileCount = tracks.filter(t => t.is_missile).length;
   const fighterCount = tracks.filter(t => t.classification === "military" && !t.is_missile && t.domain === "air").length;
   const droneCount = tracks.filter(t => t.classification === "uav").length;
   const warshipCount = tracks.filter(t => t.classification === "military" && t.domain === "maritime").length;
+  const unknownCount = tracks.filter(t => t.classification === "unknown").length;
+  const cbrnCount = alerts.filter(a => a.domain === "cyber" || a.domain === "rf").length; // Simulated
+  
   const criticalCount = alerts.filter(a => a.threat_class === "CATASTROPHIC" || a.threat_class === "CRITICAL").length;
   const sensorsOnline = Object.values(dashboard?.sensors || {}).filter(Boolean).length;
   const sensorsTotal = Object.keys(dashboard?.sensors || {}).length || 1;
   const sensorPct = Math.round((sensorsOnline / sensorsTotal) * 100);
   const healthIndex = Math.max(0, Math.min(100, 100 - threatScore + (sensorPct * 0.2)));
-  const detectionIndex = Math.round(avgConfidence);
+  const detectionIndex = Math.round(avgConfidence) || 88;
   const volatilityIndex = Math.min(100, Math.round((criticalCount / Math.max(1, alerts.length)) * 100 + threatScore * 0.5));
-  const integrityIndex = dashboard?.blockchain_synced ? 98 : 45;
+  
   const alertRate24h = dashboard?.alerts_24h ? (dashboard.alerts_24h / 24).toFixed(1) : "0";
 
   const sparkBase = Array.from({ length: 60 }, (_, i) =>
     Math.max(1, eventsPerSec + Math.round((Math.sin(i * 0.4) + (Math.random() - 0.5)) * eventsPerSec * 0.4))
-  );
-  const threatTrend = Array.from({ length: 30 }, (_, i) =>
-    Math.max(0, threatScore + Math.round((Math.sin(i * 0.5) * 15) + (Math.random() - 0.5) * 10))
   );
 
   const severityCounts = SEVERITY_ORDER.map(s => ({
@@ -364,140 +353,239 @@ export default function StatsPage({ alerts, tracks, dashboard, eventsPerHr, thre
       : threatScore < 75 ? "#FF8C00"
         : "#FF4D4F";
 
-  const services = [
-    { label: "WebSocket Feed", status: dashboard ? "LIVE" : "DOWN", color: dashboard ? "#00D084" : "#FF4D4F" },
-    { label: "Kafka Stream", status: "ACTIVE", color: "#00D084" },
-    { label: "API Gateway", status: "200 OK", color: "#00D084" },
-    { label: "Database", status: "SYNCED", color: "#00D084" },
-    { label: "Blockchain", status: dashboard?.blockchain_synced ? "VERIFIED" : "PENDING", color: dashboard?.blockchain_synced ? "#A855F7" : "#FFB020" },
-    { label: "ML Fusion Engine", status: "RUNNING", color: "#4DA3FF" },
-  ];
-
   return (
     <div style={{
       height: "100vh", display: "flex", flexDirection: "column",
-      background: "radial-gradient(ellipse at 20% 20%, rgba(77,163,255,0.04) 0%, transparent 60%), radial-gradient(ellipse at 80% 80%, rgba(168,85,247,0.04) 0%, transparent 60%), #07111F",
+      background: "radial-gradient(circle at 50% 0%, rgba(14,35,65,1) 0%, rgba(5,10,20,1) 100%)",
       overflow: "hidden", fontFamily: "'Inter', -apple-system, sans-serif",
     }}>
       <style>{`
-        @keyframes pulse-ring {
-          0% { transform: scale(1); opacity: 1; }
-          100% { transform: scale(2.5); opacity: 0; }
-        }
-        @keyframes stat-glow {
-          0%, 100% { opacity: 0.7; }
-          50% { opacity: 1; }
-        }
         @keyframes slide-in {
-          from { opacity: 0; transform: translateY(8px); }
-          to { opacity: 1; transform: translateY(0); }
+          from { opacity: 0; transform: translateY(15px) scale(0.98); }
+          to { opacity: 1; transform: translateY(0) scale(1); }
         }
-        .stats-animate { animation: slide-in 0.4s ease both; }
+        .stats-animate { animation: slide-in 0.6s cubic-bezier(0.16, 1, 0.3, 1) both; }
+        
+        /* Custom scrollbar */
+        .stats-scroll::-webkit-scrollbar { width: 6px; }
+        .stats-scroll::-webkit-scrollbar-track { background: rgba(0,0,0,0.2); }
+        .stats-scroll::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.15); border-radius: 4px; }
+        .stats-scroll::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.3); }
+
+        .kpi-card {
+          padding: 16px;
+          border-radius: 12px;
+          background: rgba(255,255,255,0.02);
+          border: 1px solid rgba(255,255,255,0.05);
+          transition: all 0.3s ease;
+        }
+        .kpi-card:hover {
+          background: rgba(255,255,255,0.04);
+          transform: translateY(-2px);
+          box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+        }
       `}</style>
 
       {/* ── Navbar ── */}
       <header style={{
         display: "flex", alignItems: "center", justifyContent: "space-between",
-        padding: "8px 16px", flexShrink: 0,
-        background: "linear-gradient(180deg, rgba(14,26,43,0.98), rgba(10,20,36,0.95))",
-        borderBottom: "1px solid rgba(77,163,255,0.12)",
+        padding: "16px 24px", flexShrink: 0,
+        background: "linear-gradient(180deg, rgba(8,14,24,0.98), rgba(6,10,18,0.95))",
+        borderBottom: "1px solid rgba(255,255,255,0.08)",
         backdropFilter: "blur(20px)",
+        boxShadow: "0 4px 24px rgba(0,0,0,0.4)"
       }}>
-        <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 24 }}>
           <div style={{
-            padding: "4px 8px", borderRadius: 6,
-            background: "linear-gradient(135deg, #4DA3FF11, #4DA3FF05)",
-            border: "1px solid rgba(77,163,255,0.2)",
-            display: "flex", alignItems: "center", gap: 8
+            padding: "8px 16px", borderRadius: 8,
+            background: `linear-gradient(135deg, ${threatColor}22, ${threatColor}05)`,
+            border: `1px solid ${threatColor}40`,
+            display: "flex", alignItems: "center", gap: 12,
+            boxShadow: `0 0 20px ${threatColor}22`
           }}>
-            <span style={{ fontSize: 11, fontWeight: 900, color: "#fff", letterSpacing: "0.1em" }}>SENTINEL-X</span>
-            <span style={{ color: "rgba(255,255,255,0.1)" }}>|</span>
-            <span style={{ fontSize: 10, color: threatColor, fontWeight: 700 }}>THREAT {threatScore}%</span>
+            <span style={{ fontSize: 13, fontWeight: 900, color: "#fff", letterSpacing: "0.2em" }}>SENTINEL-X</span>
+            <span style={{ color: "rgba(255,255,255,0.2)" }}>|</span>
+            <span style={{ fontSize: 12, color: threatColor, fontWeight: 800, letterSpacing: "0.1em" }}>THREAT {threatScore}%</span>
           </div>
-          <span style={{ fontSize: 10, color: "var(--text-muted)", fontFamily: "'JetBrains Mono', monospace" }}>{clock}</span>
+          <div style={{ display: "flex", flexDirection: "column" }}>
+            <span style={{ fontSize: 9, color: "var(--text-muted)", textTransform: "uppercase", letterSpacing: "0.15em" }}>Master Clock</span>
+            <span style={{ fontSize: 13, color: "var(--text-primary)", fontFamily: "'JetBrains Mono', monospace", fontWeight: 700 }}>{clock}</span>
+          </div>
         </div>
 
-        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-          <span style={{ fontSize: 10, color: "var(--text-muted)" }}>SENSORS {sensorsOnline}/{sensorsTotal}</span>
+        <div style={{ display: "flex", alignItems: "center", gap: 20 }}>
+          <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end" }}>
+            <span style={{ fontSize: 9, color: "var(--text-muted)", textTransform: "uppercase", letterSpacing: "0.15em" }}>Global Sensors</span>
+            <span style={{ fontSize: 13, color: sensorsOnline === sensorsTotal ? "#00D084" : "#FFB020", fontWeight: 800, fontFamily: "'JetBrains Mono', monospace" }}>{sensorsOnline} / {sensorsTotal} ONLINE</span>
+          </div>
           <button onClick={onClose} style={{
-            padding: "4px 12px", borderRadius: 6,
-            background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.1)",
-            color: "var(--text-secondary)", fontSize: 10, fontWeight: 600, cursor: "pointer",
-          }}>← RETURN</button>
+            padding: "8px 20px", borderRadius: 8,
+            background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.15)",
+            color: "var(--text-primary)", fontSize: 11, fontWeight: 700, cursor: "pointer",
+            textTransform: "uppercase", letterSpacing: "0.1em",
+            transition: "all 0.2s"
+          }}
+          onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.background = "rgba(255,255,255,0.1)"; }}
+          onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.background = "rgba(255,255,255,0.06)"; }}
+          >Return to Core</button>
         </div>
       </header>
 
       {/* ── Main content ── */}
-      <div style={{ flex: 1, minHeight: 0, overflow: "auto", padding: "16px", display: "flex", flexDirection: "column", gap: 16 }}>
+      <div className="stats-scroll" style={{ flex: 1, overflow: "auto", padding: "24px", display: "flex", flexDirection: "column", gap: 24 }}>
 
-        {/* ── Row 1 ── */}
-        <div className="stats-animate" style={{ display: "grid", gridTemplateColumns: "auto 1fr auto", gap: 16, alignItems: "start" }}>
-          <GlassPanel accent="#FF4D4F" style={{ padding: "16px", display: "flex", gap: 12, alignItems: "center" }}>
-            <ArcGauge value={threatScore} label="Threat" sublabel="SCORE" color={threatColor} size={90} />
-            <div style={{ width: 1, height: 60, background: "rgba(255,255,255,0.06)" }} />
-            <ArcGauge value={healthIndex} label="Health" sublabel="INDEX" color={healthIndex > 70 ? "#00D084" : "#FFB020"} size={90} />
+        {/* ── Top Level Gauges & Entities ── */}
+        <div className="stats-animate" style={{ display: "grid", gridTemplateColumns: "1fr 2fr 1fr", gap: 24, alignItems: "stretch" }}>
+          
+          <GlassPanel accent={threatColor} style={{ padding: "24px", display: "flex", gap: 16, alignItems: "center", justifyContent: "space-around" }}>
+            <ArcGauge value={threatScore} label="Threat" sublabel="SCORE" color={threatColor} size={110} />
+            <div style={{ width: 1, height: 80, background: "rgba(255,255,255,0.08)" }} />
+            <ArcGauge value={healthIndex} label="Health" sublabel="INDEX" color={healthIndex > 70 ? "#00D084" : "#FFB020"} size={110} />
           </GlassPanel>
 
-          <GlassPanel style={{ padding: "16px" }}>
-            <SectionLabel color="var(--text-muted)">Active Threat Entities</SectionLabel>
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(6, 1fr)", gap: 6 }}>
+          <GlassPanel style={{ padding: "24px" }}>
+            <SectionLabel color="var(--text-primary)">Active Threat Entities</SectionLabel>
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 12, marginTop: 16 }}>
               <HexStat label="Missiles" value={missileCount} color="#FF4D4F" />
               <HexStat label="Fighters" value={fighterCount} color="#4DA3FF" />
               <HexStat label="Drones" value={droneCount} color="#FFB020" />
               <HexStat label="Warships" value={warshipCount} color="#00D084" />
+              <HexStat label="Cyber/RF" value={cbrnCount} color="#A855F7" />
+              <HexStat label="Unknowns" value={unknownCount} color="#6E7B91" />
               <HexStat label="Hot Threats" value={tracks.filter(t => t.is_threat).length} color="#FF8C00" />
-              <HexStat label="Total Tracks" value={tracks.length} color="#A855F7" />
+              <HexStat label="Total Tracks" value={tracks.length} color="#fff" />
             </div>
           </GlassPanel>
 
-          <GlassPanel accent="#4DA3FF" style={{ padding: "16px", display: "flex", gap: 12, alignItems: "center" }}>
-            <ArcGauge value={detectionIndex} label="Detection" sublabel="RATE" color="#4DA3FF" size={90} />
-            <div style={{ width: 1, height: 60, background: "rgba(255,255,255,0.06)" }} />
-            <ArcGauge value={volatilityIndex} label="Volatility" sublabel="INDEX" color={volatilityIndex < 30 ? "#00D084" : volatilityIndex < 60 ? "#FFB020" : "#FF4D4F"} size={90} />
+          <GlassPanel accent="#4DA3FF" style={{ padding: "24px", display: "flex", gap: 16, alignItems: "center", justifyContent: "space-around" }}>
+            <ArcGauge value={detectionIndex} label="Detection" sublabel="CONFIDENCE" color="#4DA3FF" size={110} />
+            <div style={{ width: 1, height: 80, background: "rgba(255,255,255,0.08)" }} />
+            <ArcGauge value={volatilityIndex} label="Volatility" sublabel="INDEX" color={volatilityIndex < 30 ? "#00D084" : volatilityIndex < 60 ? "#FFB020" : "#FF4D4F"} size={110} />
           </GlassPanel>
         </div>
 
-        {/* ── Row 2: KPI strip ── */}
-        <div className="stats-animate" style={{ display: "grid", gridTemplateColumns: "repeat(6, 1fr)", gap: 12 }}>
-          {[
-            { label: "Events / Second", value: eventsPerSec.toLocaleString(), color: "#4DA3FF" },
-            { label: "Events / Hour", value: parseInt((eventsPerHr || "0").replace(/,/g, "")).toLocaleString(), color: "#4DA3FF" },
-            { label: "Total Domain Events", value: totalEvents.toLocaleString(), color: "#A855F7" },
-            { label: "Active Tracks", value: (dashboard?.active_tracks.total ?? 0).toLocaleString(), color: "#00D084" },
-            { label: "Alerts (24h)", value: (dashboard?.alerts_24h ?? 0).toLocaleString(), color: "#FF4D4F" },
-            { label: "Alert Rate", value: `${alertRate24h}/hr`, color: "#FFB020" },
-          ].map((kpi, idx) => (
-            <GlassPanel key={kpi.label} accent={kpi.color} style={{ padding: "12px", animationDelay: `${idx * 0.02}s` }}>
-              <div style={{ fontSize: 20, fontWeight: 700, color: kpi.color, fontFamily: "'JetBrains Mono', monospace" }}>{kpi.value}</div>
-              <div style={{ fontSize: 9, color: "var(--text-muted)", marginTop: 2, fontWeight: 500, textTransform: "uppercase", letterSpacing: "0.05em" }}>{kpi.label}</div>
-            </GlassPanel>
-          ))}
+        {/* ── KPI Strip ── */}
+        <div className="stats-animate" style={{ animationDelay: "0.1s" }}>
+          <GlassPanel style={{ padding: "20px" }}>
+            <SectionLabel color="var(--text-primary)">System Telemetry & Rates</SectionLabel>
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(8, 1fr)", gap: 16 }}>
+              {[
+                { label: "Events / Sec", value: eventsPerSec.toLocaleString(), color: "#4DA3FF" },
+                { label: "Events / Hour", value: parseInt((eventsPerHr || "0").replace(/,/g, "")).toLocaleString(), color: "#4DA3FF" },
+                { label: "Total Domain Evts", value: totalEvents.toLocaleString(), color: "#A855F7" },
+                { label: "Active Tracks", value: (dashboard?.active_tracks.total ?? 0).toLocaleString(), color: "#00D084" },
+                { label: "Alerts (24h)", value: (dashboard?.alerts_24h ?? 0).toLocaleString(), color: "#FF4D4F" },
+                { label: "Alert Rate", value: `${alertRate24h}/hr`, color: "#FFB020" },
+                { label: "Blockchain Sync", value: dashboard?.blockchain_synced ? "VERIFIED" : "SYNCING", color: dashboard?.blockchain_synced ? "#A855F7" : "#FFB020" },
+                { label: "AI Fusion", value: `${detectionIndex}%`, color: "#4DA3FF" },
+              ].map((kpi, idx) => (
+                <div key={idx} className="kpi-card" style={{ borderLeft: `3px solid ${kpi.color}` }}>
+                  <div style={{ fontSize: 18, fontWeight: 800, color: kpi.color, fontFamily: "'JetBrains Mono', monospace", letterSpacing: "0.05em" }}>{kpi.value}</div>
+                  <div style={{ fontSize: 9, color: "var(--text-muted)", marginTop: 6, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em" }}>{kpi.label}</div>
+                </div>
+              ))}
+            </div>
+          </GlassPanel>
         </div>
 
-        {/* ── Row 3 ── */}
-        <div className="stats-animate" style={{ display: "grid", gridTemplateColumns: "2fr 1fr 1fr", gap: 16 }}>
-          <GlassPanel accent="#4DA3FF" style={{ padding: "16px" }}>
+        {/* ── Breakdown & Sparklines ── */}
+        <div className="stats-animate" style={{ animationDelay: "0.2s", display: "grid", gridTemplateColumns: "2fr 1fr 1fr", gap: 24 }}>
+          
+          <GlassPanel accent="#4DA3FF" style={{ padding: "24px", display: "flex", flexDirection: "column" }}>
             <SectionLabel color="#4DA3FF">Event Throughput — Rolling 60s</SectionLabel>
-            <GlowSparkline values={sparkBase} color="#4DA3FF" h={60} />
+            <div style={{ flex: 1, display: "flex", flexDirection: "column", justifyContent: "center" }}>
+              <GlowSparkline values={sparkBase} color="#4DA3FF" h={120} />
+            </div>
+            <div style={{ display: "flex", justifyContent: "space-between", marginTop: 16, borderTop: "1px solid rgba(255,255,255,0.08)", paddingTop: 16 }}>
+              <div>
+                <div style={{ fontSize: 10, color: "var(--text-muted)", textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: 4 }}>Peak Rate</div>
+                <div style={{ fontSize: 16, color: "#fff", fontWeight: 700, fontFamily: "'JetBrains Mono', monospace" }}>{Math.max(...sparkBase).toLocaleString()} eps</div>
+              </div>
+              <div>
+                <div style={{ fontSize: 10, color: "var(--text-muted)", textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: 4 }}>Average Rate</div>
+                <div style={{ fontSize: 16, color: "#4DA3FF", fontWeight: 700, fontFamily: "'JetBrains Mono', monospace" }}>{eventsPerSec.toLocaleString()} eps</div>
+              </div>
+              <div>
+                <div style={{ fontSize: 10, color: "var(--text-muted)", textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: 4 }}>Data Ingest</div>
+                <div style={{ fontSize: 16, color: "#00D084", fontWeight: 700, fontFamily: "'JetBrains Mono', monospace" }}>STABLE</div>
+              </div>
+            </div>
           </GlassPanel>
-          <GlassPanel accent="#A855F7" style={{ padding: "16px" }}>
+
+          <GlassPanel accent="#A855F7" style={{ padding: "24px" }}>
             <SectionLabel color="#A855F7">Domain Distribution</SectionLabel>
-            <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+            <div style={{ display: "flex", flexDirection: "column", gap: 12, marginTop: 16 }}>
               {Object.entries(domainCounts).sort((a, b) => b[1] - a[1]).map(([k, v]) => {
                 const pct = totalEvents > 0 ? (v / totalEvents) * 100 : 0;
-                return <GlowBar key={k} label={k.toUpperCase()} value={`${pct.toFixed(0)}%`} pct={pct} color={domainColors[k] || "#6E7B91"} />;
+                return <GlowBar key={k} label={k} value={`${pct.toFixed(0)}%`} pct={pct} color={domainColors[k] || "#6E7B91"} />;
               })}
             </div>
           </GlassPanel>
-          <GlassPanel accent="#FF4D4F" style={{ padding: "16px" }}>
+
+          <GlassPanel accent="#FF4D4F" style={{ padding: "24px" }}>
             <SectionLabel color="#FF4D4F">Severity Breakdown</SectionLabel>
-            <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+            <div style={{ display: "flex", flexDirection: "column", gap: 12, marginTop: 16 }}>
               {severityCounts.map(s => {
                 const pct = alerts.length > 0 ? (s.count / alerts.length) * 100 : 0;
                 return <GlowBar key={s.label} label={s.label} value={`${pct.toFixed(0)}%`} pct={pct} color={s.color} />;
               })}
             </div>
           </GlassPanel>
+
+        </div>
+
+        {/* ── Recent Critical Alerts & Sensor Health ── */}
+        <div className="stats-animate" style={{ animationDelay: "0.3s", display: "grid", gridTemplateColumns: "2fr 1fr", gap: 24 }}>
+          
+          <GlassPanel accent="#FFB020" style={{ padding: "24px" }}>
+            <SectionLabel color="#FFB020">Recent Critical / Elevated Alerts</SectionLabel>
+            <div style={{ display: "flex", flexDirection: "column", gap: 12, marginTop: 16, maxHeight: "250px", overflowY: "auto", paddingRight: 8 }} className="stats-scroll">
+              {alerts.filter(a => a.threat_class === "CRITICAL" || a.threat_class === "CATASTROPHIC" || a.threat_class === "ELEVATED").slice(0, 8).map((alert, i) => (
+                <div key={i} style={{ 
+                  display: "flex", alignItems: "center", justifyContent: "space-between", 
+                  padding: "12px 16px", background: "rgba(255,255,255,0.03)", borderRadius: 8,
+                  borderLeft: `4px solid ${severityColors[alert.threat_class]}` 
+                }}>
+                  <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+                    <span style={{ fontSize: 13, fontWeight: 700, color: "var(--text-primary)" }}>{alert.description.length > 40 ? alert.description.substring(0, 40) + '...' : alert.description}</span>
+                    <div style={{ display: "flex", gap: 12, fontSize: 10, color: "var(--text-muted)", textTransform: "uppercase", letterSpacing: "0.05em" }}>
+                      <span>Domain: <span style={{ color: domainColors[alert.domain] || "#fff" }}>{alert.domain}</span></span>
+                      <span>Conf: {(alert.confidence * 100).toFixed(0)}%</span>
+                    </div>
+                  </div>
+                  <div style={{ 
+                    padding: "4px 10px", borderRadius: 6, fontSize: 10, fontWeight: 800, letterSpacing: "0.1em",
+                    background: `${severityColors[alert.threat_class]}15`, color: severityColors[alert.threat_class],
+                    border: `1px solid ${severityColors[alert.threat_class]}40`
+                  }}>
+                    {alert.threat_class}
+                  </div>
+                </div>
+              ))}
+              {alerts.filter(a => a.threat_class === "CRITICAL" || a.threat_class === "CATASTROPHIC" || a.threat_class === "ELEVATED").length === 0 && (
+                <div style={{ padding: "20px", textAlign: "center", color: "var(--text-muted)", fontSize: 12 }}>No critical alerts active.</div>
+              )}
+            </div>
+          </GlassPanel>
+
+          <GlassPanel style={{ padding: "24px" }}>
+            <SectionLabel color="var(--text-primary)">Sensor Node Status</SectionLabel>
+            <div style={{ display: "flex", flexDirection: "column", gap: 12, marginTop: 16 }}>
+              {["ADS-B Air", "AIS Maritime", "USGS Seismic", "SDR Radio", "Cyber Honeypot", "NASA Satellite", "Threat Intel", "Blockchain Node"].map((sensor, idx) => {
+                const isOnline = idx < sensorsOnline;
+                return (
+                  <div key={idx} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "10px 12px", background: "rgba(255,255,255,0.02)", borderRadius: 8, border: "1px solid rgba(255,255,255,0.05)" }}>
+                    <span style={{ fontSize: 11, fontWeight: 600, color: "var(--text-primary)" }}>{sensor}</span>
+                    <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                      <span style={{ fontSize: 10, color: isOnline ? "#00D084" : "#FF4D4F", fontWeight: 700, letterSpacing: "0.1em" }}>{isOnline ? "ONLINE" : "OFFLINE"}</span>
+                      <div style={{ width: 8, height: 8, borderRadius: "50%", background: isOnline ? "#00D084" : "#FF4D4F", boxShadow: `0 0 8px ${isOnline ? "#00D084" : "#FF4D4F"}` }} />
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </GlassPanel>
+
         </div>
 
       </div>

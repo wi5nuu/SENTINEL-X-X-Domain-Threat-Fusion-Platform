@@ -1,60 +1,99 @@
-# SENTINEL-X — X-Domain Threat Fusion Platform
+<div align="center">
+  <img src="public/sentinelpagenondetect.webp" alt="Sentinel-X Logo" width="900">
+  
+  # SENTINEL-X
+  **Enterprise Multi-Domain Threat Intelligence & Fusion Platform**
 
-**SENTINEL-X** adalah platform fusi ancaman multi-domain yang mengintegrasikan berbagai domain deteksi ancaman ke dalam satu sistem real-time dengan **AI-powered correlation engine**, **blockchain evidence chain**, dan **automated incident response playbooks**.
+  [![License](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
+  [![React](https://img.shields.io/badge/Frontend-React%20%7C%20Deck.GL-61DAFB?logo=react&logoColor=black)](https://reactjs.org/)
+  [![FastAPI](https://img.shields.io/badge/Backend-FastAPI-009688?logo=fastapi&logoColor=white)](https://fastapi.tiangolo.com/)
+  [![PyTorch](https://img.shields.io/badge/AI_Engine-PyTorch-EE4C2C?logo=pytorch&logoColor=white)](https://pytorch.org/)
+  [![Blockchain](https://img.shields.io/badge/Blockchain-Ethereum%20%7C%20IPFS-3C3C3D?logo=ethereum&logoColor=white)](https://ethereum.org/)
+  [![Docker](https://img.shields.io/badge/Deployment-Docker%20Compose-2496ED?logo=docker&logoColor=white)](https://www.docker.com/)
 
-Dirancang untuk **Security Operations Center (SOC)**, **infrastructure protection**, dan **situational awareness** — memproses hingga 100.000 event/detik dengan latency <50ms p99.
-
----
-
-## Fitur Utama: Deteksi & Visualisasi Ancaman
-
-SENTINEL-X dilengkapi dengan mekanisme deteksi otomatis yang memberikan umpan balik visual instan pada dasbor:
-
-- **Deteksi Ancaman Aktif:** Ketika sistem mendeteksi anomali atau ancaman yang terverifikasi, dasbor akan secara otomatis memicu peringatan visual. Tampilan layar akan memberikan indikasi kemerahan disertai dengan *popup* notifikasi yang mendetail untuk menarik perhatian operator segera.
-- **Status Normal:** Dalam kondisi tanpa ancaman terdeteksi, antarmuka dasbor akan tetap berada pada tampilan normal (mode standar), memastikan operator tidak terganggu oleh *false alarm* dan dapat fokus pada monitoring rutin.
-- **Fusi Multi-Domain:** Menggabungkan data dari berbagai domain untuk meminimalkan *false positive* melalui korelasi silang.
-
-### Visualisasi Deteksi
-| Status Normal | Deteksi Ancaman |
-| :---: | :---: |
-| ![Status Normal](public/sentinelpagenondetect.webp) | ![Deteksi Ancaman](public/sentinelpagedetected.webp) |
+  *Advanced Situational Awareness, AI-Powered Correlation, and Automated Incident Response for Security Operations Centers (SOC), Military Command, and Critical Infrastructure Protection.*
+</div>
 
 ---
 
-## Fitur Utama Lainnya
+## 📖 Executive Overview
 
-### Domain Deteksi & Ingestor
-Sistem mengintegrasikan data dari 6 domain utama:
-- **Udara**: OpenSky Network, ADS-B Exchange
-- **Maritim**: AIS parser (NMEA)
-- **Seismik**: USGS earthquake monitoring
-- **RF/SIGINT**: SDR signal analysis
-- **Siber**: ICS honeypot, threat feeds
-- **NASA**: Data relevan dari dataset NASA
+**SENTINEL-X** is an ultra-low latency, mission-critical threat fusion platform designed to provide a unified, real-time operating picture. By seamlessly integrating raw intelligence from air, maritime, cyber, space, seismic, and RF domains, the platform eliminates the "swivel-chair" problem faced by modern SOC operators. 
 
-### Intelijen Lanjutan
-- **CBRN-Watch**: Modul pemantauan tingkat radiasi dan ancaman CBRN.
-- **Dark-Fleet-Tracker**: Modul khusus untuk melacak aktivitas kapal yang mencurigakan (*dark vessels*).
+Powered by a **PyTorch-based AI Correlation Engine**, SENTINEL-X doesn't just display data—it contextualizes it. It utilizes **Explainable AI (XAI)** to rank threats, calculate ETA regressions, and trigger automated response playbooks. To ensure absolute data integrity and a zero-trust audit trail, all critical events and operator actions are cryptographically hashed and logged directly to an Ethereum-based **Blockchain** and stored securely via **IPFS**.
 
-### AI Threat Fusion Engine
-- **Multi-modal fusion**: 5 domain-specific encoders (Conv1D + Attention) → Temporal Transformer (4 heads, 4 layers, 256 timesteps)
-- **Output heads**: Threat classification (5-level), compound threat type (multi-label), ETA regression, confidence scoring
-- **Explainable AI (XAI)**: Attention-based reasoning chain untuk setiap keputusan
-
-### Blockchain Evidence Chain
-- **ThreatLedger.sol**: Smart contract untuk immutable threat event logging dengan hash chaining.
-- **ResponseLog.sol**: Smart contract untuk operator action audit trail.
-- **IPFS Evidence Store**: Bundling bukti sensor dengan IPFS CID.
-
-### Automated Response
-- **5-level Threat Matrix**: INFORMATIONAL → SUSPICIOUS → ELEVATED → CRITICAL → CATASTROPHIC
-- **YAML Playbook Engine**: Automated response phases dengan operator approval gates
+Capable of processing up to **100,000 events/second** with **<50ms p99 latency**, SENTINEL-X represents the next generation of automated defense infrastructure.
 
 ---
 
-## Arsitektur Detail
+## 📸 Platform Visual Tour
 
-```
+SENTINEL-X provides a suite of tactical interfaces tailored for different operational requirements. Below is a detailed look at the platform's core views:
+
+### 1. The Tactical Dashboard (Normal State)
+The primary operational interface in its standard state. When no active threats are detected, the UI remains calm, utilizing a cool-blue cyber aesthetic. It displays live telemetry, active sensor status, and normal tracking logs without overwhelming the operator.
+<div align="center">
+  <img src="public/sentinelpagenondetect.webp" alt="Tactical Dashboard Normal State" width="800">
+</div>
+
+### 2. Active Threat Detection & Alerting
+When the AI Fusion Engine confirms a critical threat, the dashboard dynamically shifts its layout and color scheme. The interface aggressively highlights the anomaly (shifting to red/amber), triggering high-priority modal alerts and focusing the operator's attention entirely on the active incident and recommended playbooks.
+<div align="center">
+  <img src="public/sentinelpagedetected.webp" alt="Active Threat Detected" width="800">
+</div>
+
+### 3. Immersive 3D Global Situational Awareness
+Powered by `deck.gl`, this view provides a fully interactive 3D representation of the globe. Operators can monitor live tracks (including simulated ICBM trajectories and naval fleets) mapped against over 60 real-world military installations. It features a custom WebGL space canvas background complete with auroras, nebulae, and dynamic lighting.
+<div align="center">
+  <img src="public/sentinel3d.webp" alt="3D Global Situational Awareness" width="800">
+</div>
+
+### 4. Global Intelligence Status
+A macro-level dashboard dedicated to global intelligence feeds. It aggregates worldwide cyber threat levels, geopolitical risk indicators, seismic anomalies, and global sensor network health into a single unified summary.
+<div align="center">
+  <img src="public/senstinelpageglobal.webp" alt="Global Intelligence Status" width="800">
+</div>
+
+### 5. Advanced Analytics & Statistics
+A deep-dive analytical view providing historical data correlation, AI performance metrics, threat distribution charts, and system telemetry. Designed with a clean, glassmorphic UI, it strips away unnecessary elements (like emojis) to deliver purely professional, data-dense insights.
+<div align="center">
+  <img src="public/sentinelstatistik.webp" alt="Advanced Analytics and Statistics" width="800">
+</div>
+
+---
+
+## ✨ Core Capabilities
+
+### 🌐 Multi-Domain Data Ingestion
+Seamlessly aggregates and normalizes raw intelligence from 6 key domains via highly optimized Kafka message queues:
+- **Air Defense (ADS-B):** OpenSky Network, ADS-B Exchange integration.
+- **Maritime Security (AIS):** NMEA parser for dark vessel tracking.
+- **Seismic Activity:** USGS earthquake and subterranean monitoring.
+- **RF/SIGINT:** Software-Defined Radio (SDR) signal analysis.
+- **Cyber Warfare:** ICS honeypots and global threat feeds.
+- **Space & Satellite:** NASA datasets and orbital monitoring.
+
+### 🧠 AI Threat Fusion Engine
+- **Multi-Modal Architecture:** Utilizes 5 domain-specific encoders (Conv1D + Attention) feeding into a Temporal Transformer (4 heads, 4 layers, 256 timesteps).
+- **Predictive Analytics:** Outputs 5-level threat classifications, multi-label compound threat types, ETA regression, and confidence scoring.
+- **Explainable AI (XAI):** Provides an attention-based reasoning chain for complete transparency in decision-making, ensuring operators know *why* the AI flagged a threat.
+
+### 🔗 Blockchain Evidence Chain (Zero-Trust Audit)
+- **ThreatLedger.sol:** Smart contract ensuring immutable threat event logging via cryptographic hash chaining.
+- **ResponseLog.sol:** Smart contract providing a tamper-proof audit trail for operator actions.
+- **IPFS Integration:** Decentralized storage for bundling raw sensor evidence (PCAP files, radar sweeps) with secure IPFS CIDs, ensuring evidence cannot be tampered with by bad actors.
+
+### ⚡ Automated Incident Response
+- **5-Level Threat Matrix:** Automatically scales from *INFORMATIONAL* > *SUSPICIOUS* > *ELEVATED* > *CRITICAL* > *CATASTROPHIC*.
+- **YAML Playbook Engine:** Executes automated response phases while supporting manual operator approval gates for critical actions (e.g., firewall isolation, kinetic response authorization).
+
+---
+
+## 🏗️ System Architecture
+
+SENTINEL-X relies on a highly scalable, event-driven microservices architecture:
+
+```text
                     ┌────────────────────────────┐
                     │       React Frontend       │ (Port 3000)
                     │   (Tactical Dashboard)     │
@@ -88,51 +127,64 @@ Sistem mengintegrasikan data dari 6 domain utama:
 
 ---
 
-## Struktur Proyek
+## 📂 Project Structure
 
-Proyek ini memiliki beberapa modul yang terbagi ke dalam berbagai direktori untuk memudahkan pengembangan dan pemisahan *concerns*:
-
-- **`src/`** — *Source code* utama dari keseluruhan sistem SENTINEL-X:
-  - **`api/`**: Backend API berbasis FastAPI.
-  - **`frontend/`**: Antarmuka pengguna *Tactical Dashboard* menggunakan React.
-  - **`ai_engine/`**: Model *machine learning* dan pipeline PyTorch untuk *Threat Fusion*.
-  - **`ingestors/`**: Modul integrasi yang menarik data dari berbagai domain (Udara, Laut, RF, Siber, dll).
-  - **`blockchain/`**: *Smart contracts* Ethereum dan integrasi IPFS untuk *immutable logging*.
-  - **`intelligence/`**: Modul intelijen lanjutan (seperti *CBRN-Watch*, *Dark-Fleet-Tracker*).
-  - **`response/`**: Sistem pengelola otomatisasi *response playbook*.
-  - **`synthetic_generator/`**: Modul pembuat data sintetis untuk keperluan pengujian.
-  - **`common/`**: *Library* dan kode utilitas umum.
-- **`config/`** — Direktori sentral untuk manajemen konfigurasi environment.
-- **`docker/`** — Kumpulan *Dockerfiles*, skrip *entrypoint*, dan konfigurasi layanan (Nginx, Prometheus, dll).
-- **`deploy/`** — *Script* untuk otomatisasi *deployment* infrastruktur menggunakan Ansible dan Terraform.
-- **`models/`** — Definisi *schema* dan struktur data (Pydantic, SQLAlchemy).
-- **`migrations/`** — Skrip migrasi *database* otomatis dengan Alembic.
-- **`playbooks/`** — Kumpulan YAML Playbook untuk menangani respons insiden.
-- **`public/`** — Aset publik statis dan referensi visual (seperti gambar dokumentasi).
-- **`scripts/`** — Skrip utilitas pengembangan, instalasi, dan pemeliharaan.
-- **`tests/`** — Kumpulan *unit test* dan *integration test* menggunakan Pytest.
-- **`examples/`** — Contoh kode dan penggunaan integrasi data untuk referensi.
+- **`src/`** — Core source code
+  - **`api/`**: FastAPI backend server (WebSockets, REST endpoints).
+  - **`frontend/`**: React-based UI (Vite, TypeScript, Deck.gl, Leaflet).
+  - **`ai_engine/`**: PyTorch ML models and inference pipelines.
+  - **`ingestors/`**: Data ingestion modules for external API polling and socket parsing.
+  - **`blockchain/`**: Ethereum smart contracts (`.sol`) and Web3/IPFS integration scripts.
+  - **`response/`**: Playbook automation scripts.
+- **`config/`** — Centralized `.env` and YAML configurations.
+- **`docker/`** — Dockerfiles and entrypoint configurations.
+- **`deploy/`** — Infrastructure as Code (Ansible/Terraform).
+- **`tests/`** — Pytest suites for CI/CD pipelines.
+- **`public/`** — Static assets and documentation imagery.
 
 ---
 
-## Memulai
+## 🚀 Getting Started
 
-### Menjalankan dengan Docker
+### Prerequisites
+- **Docker & Docker Compose** (Minimum v2.0+)
+- **Node.js** (v18+ for local frontend development)
+- **Python** (3.10+ for local backend development)
+- Minimum System RAM: 16GB (due to AI models and Elasticsearch)
+
+### Deployment via Docker (Recommended)
+Launch the entire microservices stack (Frontend, API, Kafka, Zookeeper, Postgres, Redis, IPFS, Hardhat) with a single command:
+
 ```bash
-docker compose up -d
+# Clone the repository
+git clone https://github.com/yourusername/sentinel-x.git
+cd sentinel-x
+
+# Build and deploy all containers in detached mode
+docker compose up -d --build
 ```
 
-### Pengembangan Lokal
-```bash
-# Install dependencies
-pip install -r requirements.txt
-
-# Jalankan API server
-uvicorn src.api.main:app --reload --port 8000
-```
+**Access Points:**
+- **Tactical Dashboard:** [http://localhost:3000](http://localhost:3000)
+- **FastAPI Swagger Docs:** [http://localhost:8000/docs](http://localhost:8000/docs)
+- **Prometheus/Grafana (if enabled):** [http://localhost:3001](http://localhost:3001)
 
 ---
 
-## Lisensi & Penggunaan
+## 🔒 Security & Contribution
 
-SENTINEL-X dirancang untuk tujuan pertahanan infrastruktur kritis dan keamanan nasional yang sah. Pengguna bertanggung jawab penuh atas kepatuhan terhadap hukum dan regulasi yang berlaku di yurisdiksi masing-masing.
+- **Security Audits:** Please report any potential vulnerabilities to the security email listed in `SECURITY.md`. Do not open public issues for zero-days.
+- **Contributing:** We welcome PRs for new Ingestor domains or Playbook configurations. Please review `CONTRIBUTING.md` before submitting.
+
+---
+
+## 📜 License & Legal
+
+**SENTINEL-X** is designed for legitimate critical infrastructure defense and national security research. Users take full responsibility for compliance with all applicable local, national, and international laws regarding SIGINT, cyber monitoring, and data privacy.
+
+Released under the **MIT License**. See `LICENSE` for details.
+
+<div align="center">
+  <br>
+  <i>Developed with precision and security in mind.</i>
+</div>

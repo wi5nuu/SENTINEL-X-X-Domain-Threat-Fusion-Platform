@@ -12,6 +12,7 @@ import ThreatScoreGauge from "./components/ThreatScoreGauge";
 import AlertVolumeChart from "./components/AlertVolumeChart";
 import StatsPage from "./StatsPage";
 import GlobalStatusPage from "./GlobalStatusPage";
+import Globe3D from "./components/Globe3D";
 
 import SituationalTicker from "./components/SituationalTicker";
 import TacticalAnalyst from "./components/TacticalAnalyst";
@@ -257,6 +258,7 @@ function App() {
 
   const [activeNav, setActiveNav] = useState("overview");
   const [clock, setClock] = useState("");
+  const [mapMode, setMapMode] = useState<"2d" | "3d">("2d");
 
   useEffect(() => {
     const updateClock = () => {
@@ -318,6 +320,15 @@ function App() {
           <span className="text-gray-700">|</span>
           <button onClick={() => navigate("/statistik")} className="text-[10px] px-2 py-0.5 rounded border" style={{ color: "#00D4FF", borderColor: "rgba(0,212,255,0.3)" }}>STATS</button>
           <button onClick={() => navigate("/global-status")} className="text-[10px] px-2 py-0.5 rounded border" style={{ color: "#F59E0B", borderColor: "rgba(245,158,11,0.3)" }}>GLOBAL</button>
+          <button
+            onClick={() => setMapMode(m => m === "2d" ? "3d" : "2d")}
+            className="text-[10px] px-2 py-0.5 rounded border font-bold"
+            style={{
+              color: mapMode === "3d" ? "#A855F7" : "#6E7B91",
+              borderColor: mapMode === "3d" ? "rgba(168,85,247,0.5)" : "rgba(110,123,145,0.3)",
+              background: mapMode === "3d" ? "rgba(168,85,247,0.1)" : "transparent"
+            }}
+          >{mapMode === "3d" ? "3D GLOBE" : "2D MAP"}</button>
         </div>
       </div>
 
@@ -347,8 +358,11 @@ function App() {
 
         {/* MAP */}
         <div className="flex-1 flex flex-col min-w-0 p-1">
-          <div className="flex-1 min-h-0 rounded overflow-hidden border" style={{ borderColor: "rgba(0,212,255,0.1)" }}>
-            <GlobalMap tracks={filteredTracks} trackHistory={trackHistory} searchQuery={searchQuery} entityFilter={entityFilter} onFilterByType={setEntityFilter} />
+          <div className="flex-1 min-h-0 rounded overflow-hidden border" style={{ borderColor: "rgba(0,212,255,0.1)", position: "relative" }}>
+            {mapMode === "2d"
+              ? <GlobalMap tracks={filteredTracks} trackHistory={trackHistory} searchQuery={searchQuery} entityFilter={entityFilter} onFilterByType={setEntityFilter} />
+              : <Globe3D tracks={filteredTracks} />
+            }
           </div>
           <div className="flex items-center gap-2 mt-1 shrink-0">
             <DomainToggle active={domainFilters} onToggle={(id) => setDomainFilters((p) => ({ ...p, [id]: !p[id] }))} />

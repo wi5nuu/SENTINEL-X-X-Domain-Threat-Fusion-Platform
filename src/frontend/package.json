@@ -12,6 +12,7 @@
     "html2canvas": "^1.4.1",
     "leaflet": "^1.9.4",
     "deck.gl": "^9.0.0",
+    "@deck.gl/core": "^9.0.0",
     "@deck.gl/react": "^9.0.0",
     "@deck.gl/layers": "^9.0.0",
     "@deck.gl/geo-layers": "^9.0.0",
