@@ -49,17 +49,26 @@ async def main():
     main_task = asyncio.create_task(ingestor.start())
 
     try:
-        await shutdown_event.wait()
+        done, _ = await asyncio.wait(
+            [main_task, asyncio.create_task(shutdown_event.wait())],
+            return_when=asyncio.FIRST_COMPLETED,
+        )
+        if main_task in done:
+            exc = main_task.exception()
+            if exc:
+                logger.critical("Ingestor crashed", extra={"error": str(exc)})
+                sys.exit(1)
     except asyncio.CancelledError:
         pass
     finally:
-        logger.info("Shutting down ingestor")
-        await ingestor.stop()
-        main_task.cancel()
-        try:
-            await main_task
-        except asyncio.CancelledError:
-            pass
+        if not shutdown_event.is_set():
+            logger.info("Shutting down ingestor")
+            await ingestor.stop()
+            main_task.cancel()
+            try:
+                await main_task
+            except (asyncio.CancelledError, Exception):
+                pass
 
 
 if __name__ == "__main__":

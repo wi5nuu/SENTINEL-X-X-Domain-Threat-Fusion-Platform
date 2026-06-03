@@ -23,6 +23,7 @@ class Settings(BaseSettings):
     sendgrid_api_key: Optional[str] = None
     model_path: str = "/models/threat_fusion_v1.pt"
     ingestor_type: str = "air"
+    nasa_api_key: Optional[str] = None
 
     class Config:
         env_file = ".env"

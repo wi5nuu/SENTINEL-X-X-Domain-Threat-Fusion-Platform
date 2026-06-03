@@ -298,7 +298,7 @@ phases:
 ## Monitoring
 
 ### Grafana Dashboard
-Akses di `http://localhost:3001` (login: `admin` / `sentinel_admin`)
+Akses di `http://localhost/grafana/` (login: `admin` / `sentinel_admin`)
 
 Dashboard pre-built mencakup:
 - Events ingested rate per domain
@@ -309,7 +309,7 @@ Dashboard pre-built mencakup:
 - AI inference latency
 
 ### Prometheus Metrics
-Akses di `http://localhost:9090`
+Akses di `http://localhost/prometheus/`
 
 Key metrics:
 ```
@@ -320,7 +320,7 @@ sentinel_kafka_consumer_lag{topic="air-tracks"}
 ```
 
 ### Distributed Tracing (Jaeger)
-Akses di `http://localhost:16686`
+Akses di `http://localhost/jaeger/`
 
 ---
 

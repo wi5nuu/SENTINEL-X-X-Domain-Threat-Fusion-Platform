@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SENTINEL-X Portal</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:system-ui,-apple-system,'Segoe UI',Roboto,sans-serif;background:#0a0e17;color:#e0e6f0;min-height:100vh}
+header{background:linear-gradient(135deg,#0d1b2a,#1b2838);padding:2rem;text-align:center;border-bottom:2px solid #00d4ff}
+header h1{font-size:2.2rem;font-weight:700;background:linear-gradient(90deg,#00d4ff,#00ff88);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+header p{color:#8899aa;margin-top:.5rem;font-size:.95rem}
+.container{max-width:1000px;margin:2rem auto;padding:0 1.5rem}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:1rem}
+.card{background:#131d2e;border:1px solid #1e2d42;border-radius:12px;padding:1.5rem;transition:all .2s}
+.card:hover{transform:translateY(-3px);border-color:#00d4ff;box-shadow:0 8px 25px rgba(0,212,255,.1)}
+.card-icon{font-size:2rem;margin-bottom:.75rem}
+.card h3{font-size:1.1rem;margin-bottom:.4rem}
+.card p{color:#8899aa;font-size:.85rem;margin-bottom:.8rem;line-height:1.4}
+.card a{display:inline-block;padding:.5rem 1.2rem;background:#00d4ff;color:#0a0e17;text-decoration:none;border-radius:6px;font-weight:600;font-size:.85rem;transition:background .2s}
+.card a:hover{background:#00ff88}
+.status-bar{display:flex;gap:1rem;justify-content:center;flex-wrap:wrap;margin-bottom:2rem;padding:1rem;background:#131d2e;border-radius:10px;border:1px solid #1e2d42}
+.status-item{display:flex;align-items:center;gap:.5rem;font-size:.85rem;color:#8899aa}
+.status-dot{width:10px;height:10px;border-radius:50%;background:#00ff88}
+footer{text-align:center;padding:2rem;color:#556677;font-size:.8rem;border-top:1px solid #1e2d42;margin-top:3rem}
+</style>
+</head>
+<body>
+<header>
+  <h1>SENTINEL-X</h1>
+  <p>Multi-Domain Threat Detection &amp; Response Platform</p>
+</header>
+<div class="container">
+  <div class="status-bar" id="statusBar">
+    <div class="status-item"><span class="status-dot"></span> Air</div>
+    <div class="status-item"><span class="status-dot"></span> Maritime</div>
+    <div class="status-item"><span class="status-dot"></span> Seismic</div>
+    <div class="status-item"><span class="status-dot"></span> RF</div>
+    <div class="status-item"><span class="status-dot"></span> Cyber</div>
+    <div class="status-item"><span class="status-dot"></span> AI Engine</div>
+    <div class="status-item"><span class="status-dot"></span> Blockchain</div>
+  </div>
+  <div class="grid">
+    <div class="card">
+      <div class="card-icon">🛸</div>
+      <h3>HUD Dashboard</h3>
+      <p>Real-time threat visualization, global map, alert timeline, sensor status</p>
+      <a href="http://localhost:3000" target="_blank">Open HUD →</a>
+    </div>
+    <div class="card">
+      <div class="card-icon">🔌</div>
+      <h3>API Docs (Swagger)</h3>
+      <p>REST API documentation with interactive Swagger UI for all endpoints</p>
+      <a href="http://localhost:8000/docs" target="_blank">Open API →</a>
+    </div>
+    <div class="card">
+      <div class="card-icon">📊</div>
+      <h3>Grafana</h3>
+      <p>Metrics dashboards, alerting, TimescaleDB queries, custom panels</p>
+      <a href="http://localhost/grafana/" target="_blank">Open Grafana →</a>
+    </div>
+    <div class="card">
+      <div class="card-icon">📈</div>
+      <h3>Prometheus</h3>
+      <p>Time-series metrics, PromQL queries, service discovery, alert rules</p>
+      <a href="http://localhost/prometheus/" target="_blank">Open Prometheus →</a>
+    </div>
+    <div class="card">
+      <div class="card-icon">🔍</div>
+      <h3>Jaeger Tracing</h3>
+      <p>Distributed tracing, service dependency graph, trace search &amp; analysis</p>
+      <a href="http://localhost/jaeger/" target="_blank">Open Jaeger →</a>
+    </div>
+    <div class="card">
+      <div class="card-icon">⛓️</div>
+      <h3>System Status</h3>
+      <p>API Health — <span id="healthStatus">checking...</span></p>
+      <a href="http://localhost:8000/health" target="_blank">Check Health →</a>
+    </div>
+  </div>
+  <footer>SENTINEL-X &mdash; Platform Pertahanan Siber Nasional &mdash; NKRI Harga Mati</footer>
+</div>
+<script>
+fetch('http://localhost:8000/health').then(r=>r.json()).then(d=>document.getElementById('healthStatus').textContent='OK ('+d.timestamp+')').catch(()=>document.getElementById('healthStatus').textContent='OFFLINE')
+</script>
+</body>
+</html>

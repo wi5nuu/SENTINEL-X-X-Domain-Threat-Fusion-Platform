@@ -2,8 +2,6 @@
 torch==2.2.0
 torchvision==0.17.0
 mlflow==2.10.0
-onnx==1.15.0
-onnxruntime-gpu==1.17.0
 xgboost==2.0.3
 transformers==4.37.1
 scikit-learn==1.4.0

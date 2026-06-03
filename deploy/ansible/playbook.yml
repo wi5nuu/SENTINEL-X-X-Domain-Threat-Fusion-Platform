@@ -1,0 +1,289 @@
+---
+- name: Deploy SENTINEL-X production stack
+  hosts: all
+  become: yes
+  gather_facts: yes
+
+  tasks:
+    - name: Add Docker GPG key
+      apt_key:
+        url: https://download.docker.com/linux/ubuntu/gpg
+        state: present
+
+    - name: Add Docker repository
+      apt_repository:
+        repo: deb [arch=amd64] https://download.docker.com/linux/ubuntu {{ ansible_distribution_release }} stable
+        state: present
+
+    - name: Install Docker and dependencies
+      apt:
+        name:
+          - docker-ce
+          - docker-ce-cli
+          - containerd.io
+          - docker-buildx-plugin
+          - python3-pip
+          - python3-venv
+          - git
+          - curl
+          - jq
+          - ufw
+        update_cache: yes
+        state: present
+
+    - name: Install docker-compose plugin
+      get_url:
+        url: "https://github.com/docker/compose/releases/download/v{{ docker_compose_version }}/docker-compose-linux-x86_64"
+        dest: /usr/libexec/docker/cli-plugins/docker-compose
+        mode: "0755"
+
+    - name: Create sentinel user
+      user:
+        name: sentinel
+        home: /opt/sentinel
+        shell: /bin/bash
+        groups: docker
+        append: yes
+
+    - name: Create application directory structure
+      file:
+        path: "{{ item }}"
+        state: directory
+        owner: sentinel
+        group: sentinel
+        mode: "0755"
+      loop:
+        - "{{ app_dir }}"
+        - "{{ app_dir }}/docker"
+        - "{{ app_dir }}/src"
+        - "{{ app_dir }}/models"
+        - "{{ app_dir }}/scripts"
+        - "{{ app_dir }}/migrations"
+        - "{{ app_dir }}/data"
+        - "{{ app_dir }}/data/postgres"
+        - "{{ app_dir }}/data/redis"
+        - "{{ app_dir }}/data/elasticsearch"
+        - "{{ app_dir }}/data/kafka"
+        - "{{ app_dir }}/data/ipfs"
+        - "{{ app_dir }}/data/prometheus"
+        - "{{ app_dir }}/data/grafana"
+
+    - name: Copy application source code
+      synchronize:
+        src: "{{ playbook_dir }}/../../"
+        dest: "{{ app_dir }}/"
+        rsync_opts:
+          - "--exclude=.git"
+          - "--exclude=__pycache__"
+          - "--exclude=*.pyc"
+          - "--exclude=node_modules"
+          - "--exclude=.venv"
+          - "--exclude=data"
+        owner: sentinel
+        group: sentinel
+      delegate_to: "{{ inventory_hostname }}"
+
+    - name: Create .env file from template
+      copy:
+        dest: "{{ app_dir }}/.env"
+        content: |
+          # SENTINEL-X Production Configuration
+          DATABASE_URL=postgresql+asyncpg://sentinel:{{ database_password }}@postgres:5432/sentinel
+          DATABASE_PASSWORD={{ database_password }}
+          REDIS_URL=redis://redis:6379/0
+          KAFKA_BOOTSTRAP_SERVERS=kafka:9092
+          ELASTICSEARCH_URL=http://elasticsearch:9200
+          ETHEREUM_RPC_URL=http://hardhat-node:8545
+          ETHEREUM_PRIVATE_KEY=0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80
+          IPFS_RPC_URL=http://ipfs:5001
+          JWT_SECRET_KEY={{ jwt_secret_key }}
+          GRAFANA_PASSWORD={{ grafana_password }}
+          MODEL_PATH=/app/models/threat_fusion_v1.pt
+          NASA_API_KEY={{ nasa_api_key }}
+          PYTHONPATH=/app
+        owner: sentinel
+        group: sentinel
+        mode: "0600"
+
+    - name: Configure kernel parameters for Kafka/Elasticsearch
+      sysctl:
+        name: "{{ item.key }}"
+        value: "{{ item.value }}"
+        state: present
+        reload: yes
+      loop:
+        - {key: vm.max_map_count, value: "262144"}
+        - {key: net.core.somaxconn, value: "65535"}
+        - {key: net.ipv4.tcp_max_syn_backlog, value: "65535"}
+
+    - name: Configure UFW firewall
+      ufw:
+        rule: "{{ item.rule }}"
+        port: "{{ item.port }}"
+        proto: "{{ item.proto | default('tcp') }}"
+      loop:
+        - {rule: allow, port: "22"}
+        - {rule: allow, port: "80"}
+        - {rule: allow, port: "443"}
+        - {rule: allow, port: "9090", proto: tcp}
+        - {rule: allow, port: "3001", proto: tcp}
+      when: ansible_os_family == "Debian"
+
+    - name: Enable UFW
+      ufw:
+        state: enabled
+        policy: deny
+      when: ansible_os_family == "Debian"
+
+    - name: Create docker-compose override for production
+      copy:
+        dest: "{{ app_dir }}/docker-compose.prod.yml"
+        content: |
+          version: "3.9"
+          services:
+            gateway:
+              ports:
+                - "80:80"
+              restart: always
+
+            sentinel-api:
+              restart: always
+              deploy:
+                resources:
+                  limits:
+                    cpus: "2"
+                    memory: "4G"
+                  reservations:
+                    cpus: "1"
+                    memory: "2G"
+
+            sentinel-ai-engine:
+              restart: always
+              deploy:
+                resources:
+                  limits:
+                    cpus: "4"
+                    memory: "8G"
+                  reservations:
+                    cpus: "2"
+                    memory: "4G"
+
+            kafka:
+              environment:
+                KAFKA_HEAP_OPTS: "-Xmx4G -Xms2G"
+              deploy:
+                resources:
+                  limits:
+                    memory: "6G"
+
+            elasticsearch:
+              environment:
+                - "ES_JAVA_OPTS=-Xms4g -Xmx4g"
+              deploy:
+                resources:
+                  limits:
+                    memory: "8G"
+
+            postgres:
+              deploy:
+                resources:
+                  limits:
+                    memory: "4G"
+
+          volumes:
+            postgres_data:
+              driver_opts:
+                type: none
+                device: "{{ app_dir }}/data/postgres"
+                o: bind
+            redis_data:
+              driver_opts:
+                type: none
+                device: "{{ app_dir }}/data/redis"
+                o: bind
+            elasticsearch_data:
+              driver_opts:
+                type: none
+                device: "{{ app_dir }}/data/elasticsearch"
+                o: bind
+            kafka_data:
+              driver_opts:
+                type: none
+                device: "{{ app_dir }}/data/kafka"
+                o: bind
+            ipfs_data:
+              driver_opts:
+                type: none
+                device: "{{ app_dir }}/data/ipfs"
+                o: bind
+            prometheus_data:
+              driver_opts:
+                type: none
+                device: "{{ app_dir }}/data/prometheus"
+                o: bind
+            grafana_data:
+              driver_opts:
+                type: none
+                device: "{{ app_dir }}/data/grafana"
+                o: bind
+
+    - name: Create systemd service for sentinel
+      copy:
+        dest: /etc/systemd/system/sentinel.service
+        content: |
+          [Unit]
+          Description=SENTINEL-X Multi-Domain Threat Detection
+          Requires=docker.service
+          After=docker.service
+
+          [Service]
+          Type=oneshot
+          RemainAfterExit=yes
+          WorkingDirectory={{ app_dir }}
+          ExecStartPre=-/usr/bin/docker compose -f docker-compose.yml -f docker-compose.prod.yml down
+          ExecStart=/usr/bin/docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d
+          ExecStop=/usr/bin/docker compose -f docker-compose.yml -f docker-compose.prod.yml down
+          ExecReload=/usr/bin/docker compose -f docker-compose.yml -f docker-compose.prod.yml restart
+          User=sentinel
+          Group=docker
+          Restart=on-failure
+          RestartSec=30
+
+          [Install]
+          WantedBy=multi-user.target
+
+    - name: Reload systemd and enable sentinel service
+      systemd:
+        daemon_reload: yes
+        name: sentinel
+        enabled: yes
+
+    - name: Deploy SENTINEL-X stack
+      command:
+        cmd: /usr/bin/docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d
+        chdir: "{{ app_dir }}"
+      become_user: sentinel
+      register: deploy_result
+      changed_when: "'Starting' in deploy_result.stdout or 'Created' in deploy_result.stdout"
+
+    - name: Wait for services to become healthy
+      wait_for:
+        port: "{{ item }}"
+        host: "{{ ansible_default_ipv4.address }}"
+        timeout: 300
+      loop:
+        - 80
+        - 3000
+        - 8000
+      ignore_errors: yes
+
+    - name: Print deployment summary
+      debug:
+        msg:
+          - "SENTINEL-X deployment complete!"
+          - "Gateway: http://{{ ansible_default_ipv4.address }}"
+          - "API: http://{{ ansible_default_ipv4.address }}:8000/docs"
+          - "Grafana: http://{{ ansible_default_ipv4.address }}/grafana/ (admin:{{ grafana_password }})"
+          - "Prometheus: http://{{ ansible_default_ipv4.address }}/prometheus/"
+          - "Jaeger: http://{{ ansible_default_ipv4.address }}/jaeger/"
+          - "Run 'docker compose logs -f' for real-time logs"
