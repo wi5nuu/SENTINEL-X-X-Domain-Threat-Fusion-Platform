@@ -3,6 +3,7 @@ import json
 import uuid
 import random
 import time
+import os
 from datetime import datetime, timedelta
 from typing import Optional, List
 from collections import deque
@@ -10,7 +11,7 @@ from contextlib import asynccontextmanager
 
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect, HTTPException, Query
 from fastapi.middleware.cors import CORSMiddleware
-from starlette.responses import Response
+from starlette.responses import Response, FileResponse
 from sqlalchemy import select, func
 
 from src.common.config import settings
@@ -284,7 +285,7 @@ async def acknowledge_alert(alert_id: str, operator_id: str = "operator-1"):
 @app.post("/api/v1/actions/acknowledge_all")
 async def acknowledge_all():
     async with async_session() as session:
-        result = await session.execute(select(AlertDB).where(AlertDB.acknowledged == False))
+        result = await session.execute(select(AlertDB).where(not AlertDB.acknowledged))
         count = 0
         for a in result.scalars():
             a.acknowledged = True

@@ -117,12 +117,15 @@ class SyntheticGenerator:
 
     @staticmethod
     def _great_circle_interp(lat1, lon1, lat2, lon2, f):
-        if f <= 0: return lat1, lon1
-        if f >= 1: return lat2, lon2
+        if f <= 0:
+            return lat1, lon1
+        if f >= 1:
+            return lat2, lon2
         r1, r2 = map(math.radians, [lat1, lat2])
         dl = math.radians(lon2 - lon1)
         d = math.acos(min(1, max(-1, math.sin(r1)*math.sin(r2) + math.cos(r1)*math.cos(r2)*math.cos(dl))))
-        if d < 1e-10: return lat1, lon1
+        if d < 1e-10:
+            return lat1, lon1
         a, b = math.sin((1-f)*d)/math.sin(d), math.sin(f*d)/math.sin(d)
         x = a*math.cos(r1)*math.cos(math.radians(lon1)) + b*math.cos(r2)*math.cos(math.radians(lon2))
         y = a*math.cos(r1)*math.sin(math.radians(lon1)) + b*math.cos(r2)*math.sin(math.radians(lon2))
@@ -444,11 +447,11 @@ class SyntheticGenerator:
             logger.info("Emitting compound pattern trigger burst")
             # Generate periodic alerts for all domains
             for domain_name, threat_class, confidence, desc in [
-                ("air", "SUSPICIOUS", 0.65, f"Unidentified aerial contact — {random.choice(GLOBAL_HUBS)} sector — no flight plan, squawk unknown"),
-                ("maritime", "ELEVATED", 0.78, f"Dark vessel loitering near strategic waterway — AIS transponder off, suspected spoofing"),
-                ("cyber", "CRITICAL", 0.92, f"Coordinated cyber intrusion detected — multiple IOC indicators across {random.randint(2,5)} kill chain phases"),
-                ("rf", "ELEVATED", 0.81, f"Anomalous RF emission in {random.choice(['L','S','C','X','Ku'])}-band — geolocated to {random.choice(GLOBAL_HUBS)} elevation {random.randint(1,15)}°"),
-                ("seismic", "INFORMATIONAL", 0.45, f"Seismic event M{random.uniform(3,7):.1f} — depth {random.randint(5,60)}km — monitoring for aftershock sequence"),
+                ("air", "SUSPICIOUS", 0.65, "Unidentified aerial contact — sector — no flight plan, squawk unknown"),
+                ("maritime", "ELEVATED", 0.78, "Dark vessel loitering near strategic waterway — AIS transponder off, suspected spoofing"),
+                ("cyber", "CRITICAL", 0.92, "Coordinated cyber intrusion detected — multiple IOC indicators across kill chain phases"),
+                ("rf", "ELEVATED", 0.81, "Anomalous RF emission in band — geolocated to elevation"),
+                ("seismic", "INFORMATIONAL", 0.45, "Seismic event — depth — monitoring for aftershock sequence"),
             ]:
                 alert_item = {
                     "alert_id": str(uuid.uuid4()),
