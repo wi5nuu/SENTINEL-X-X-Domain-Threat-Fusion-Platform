@@ -14,6 +14,11 @@ SENTINEL-X dilengkapi dengan mekanisme deteksi otomatis yang memberikan umpan ba
 - **Status Normal:** Dalam kondisi tanpa ancaman terdeteksi, antarmuka dasbor akan tetap berada pada tampilan normal (mode standar), memastikan operator tidak terganggu oleh *false alarm* dan dapat fokus pada monitoring rutin.
 - **Fusi Multi-Domain:** Menggabungkan data dari domain udara, maritim, siber, seismik, dan RF untuk meminimalkan *false positive* melalui korelasi silang.
 
+### Visualisasi Deteksi
+| Status Normal | Deteksi Ancaman |
+| :---: | :---: |
+| ![Status Normal](public/sentinelpagenondetect.webp) | ![Deteksi Ancaman](public/sentinelpagedetected.webp) |
+
 ---
 
 ## Fitur Utama Lainnya
