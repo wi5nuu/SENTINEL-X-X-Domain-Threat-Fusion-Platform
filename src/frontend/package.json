@@ -9,18 +9,26 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "html2canvas": "^1.4.1",
+    "leaflet": "^1.9.4",
+    "deck.gl": "^9.0.0",
+    "@deck.gl/react": "^9.0.0",
+    "@deck.gl/layers": "^9.0.0",
+    "@deck.gl/geo-layers": "^9.0.0",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
-    "leaflet": "^1.9.4",
-    "react-leaflet": "^4.2.1"
+    "react-leaflet": "^4.2.1",
+    "react-router-dom": "^7.16.0"
   },
   "devDependencies": {
+    "@types/leaflet": "^1.9.8",
     "@types/react": "^18.2.48",
     "@types/react-dom": "^18.2.18",
-    "@types/leaflet": "^1.9.8",
-    "typescript": "^5.3.3",
-    "vite": "^5.0.12",
     "@vitejs/plugin-react": "^4.2.1",
-    "tailwindcss": "^3.4.1"
+    "autoprefixer": "^10.4.17",
+    "postcss": "^8.4.33",
+    "tailwindcss": "^3.4.1",
+    "typescript": "^5.3.3",
+    "vite": "^5.0.12"
   }
 }
