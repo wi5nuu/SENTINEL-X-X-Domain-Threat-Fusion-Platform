@@ -3,7 +3,7 @@ FROM python:3.12-slim
 WORKDIR /app
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
-    gcc libpq-dev netcat-openbsd build-essential && \
+    netcat-openbsd build-essential && \
     rm -rf /var/lib/apt/lists/*
 
 COPY requirements.txt .
@@ -16,4 +16,4 @@ RUN chmod +x /usr/local/bin/wait-for-it
 ENV PYTHONPATH=/app
 ENV PYTHONUNBUFFERED=1
 
-CMD ["python", "-m", "src.ingestors.runner"]
+CMD ["python", "-m", "src.ingestors.nasa.ingestor"]
