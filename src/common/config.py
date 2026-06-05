@@ -21,6 +21,8 @@ class Settings(BaseSettings):
     twilio_auth_token: Optional[str] = None
     twilio_from_number: Optional[str] = None
     sendgrid_api_key: Optional[str] = None
+    database_password: Optional[str] = None
+    grafana_password: Optional[str] = None
     model_path: str = "/models/threat_fusion_v1.pt"
     ingestor_type: str = "air"
     nasa_api_key: Optional[str] = None
