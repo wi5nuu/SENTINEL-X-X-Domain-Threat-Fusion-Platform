@@ -16,7 +16,7 @@
 
 ---
 
-## 📖 Executive Overview
+## Executive Overview
 
 **SENTINEL-X** is an ultra-low latency, mission-critical threat fusion platform designed to provide a unified, real-time operating picture. By seamlessly integrating raw intelligence from air, maritime, cyber, space, seismic, and RF domains, the platform eliminates the "swivel-chair" problem faced by modern SOC operators. 
 
@@ -26,7 +26,7 @@ Capable of processing up to **100,000 events/second** with **<50ms p99 latency**
 
 ---
 
-## 📸 Platform Visual Tour
+## Platform Visual Tour
 
 SENTINEL-X provides a suite of tactical interfaces tailored for different operational requirements. Below is a detailed look at the platform's core views:
 
@@ -62,9 +62,9 @@ A deep-dive analytical view providing historical data correlation, AI performanc
 
 ---
 
-## ✨ Core Capabilities
+## Core Capabilities
 
-### 🌐 Multi-Domain Data Ingestion
+### Multi-Domain Data Ingestion
 Seamlessly aggregates and normalizes raw intelligence from 6 key domains via highly optimized Kafka message queues:
 - **Air Defense (ADS-B):** OpenSky Network, ADS-B Exchange integration.
 - **Maritime Security (AIS):** NMEA parser for dark vessel tracking.
@@ -73,23 +73,23 @@ Seamlessly aggregates and normalizes raw intelligence from 6 key domains via hig
 - **Cyber Warfare:** ICS honeypots and global threat feeds.
 - **Space & Satellite:** NASA datasets and orbital monitoring.
 
-### 🧠 AI Threat Fusion Engine
+### AI Threat Fusion Engine
 - **Multi-Modal Architecture:** Utilizes 5 domain-specific encoders (Conv1D + Attention) feeding into a Temporal Transformer (4 heads, 4 layers, 256 timesteps).
 - **Predictive Analytics:** Outputs 5-level threat classifications, multi-label compound threat types, ETA regression, and confidence scoring.
 - **Explainable AI (XAI):** Provides an attention-based reasoning chain for complete transparency in decision-making, ensuring operators know *why* the AI flagged a threat.
 
-### 🔗 Blockchain Evidence Chain (Zero-Trust Audit)
+### Blockchain Evidence Chain (Zero-Trust Audit)
 - **ThreatLedger.sol:** Smart contract ensuring immutable threat event logging via cryptographic hash chaining.
 - **ResponseLog.sol:** Smart contract providing a tamper-proof audit trail for operator actions.
 - **IPFS Integration:** Decentralized storage for bundling raw sensor evidence (PCAP files, radar sweeps) with secure IPFS CIDs, ensuring evidence cannot be tampered with by bad actors.
 
-### ⚡ Automated Incident Response
+### Automated Incident Response
 - **5-Level Threat Matrix:** Automatically scales from *INFORMATIONAL* > *SUSPICIOUS* > *ELEVATED* > *CRITICAL* > *CATASTROPHIC*.
 - **YAML Playbook Engine:** Executes automated response phases while supporting manual operator approval gates for critical actions (e.g., firewall isolation, kinetic response authorization).
 
 ---
 
-## 🏗️ System Architecture
+## System Architecture
 
 SENTINEL-X relies on a highly scalable, event-driven microservices architecture:
 
@@ -127,7 +127,7 @@ SENTINEL-X relies on a highly scalable, event-driven microservices architecture:
 
 ---
 
-## 📂 Project Structure
+## Project Structure
 
 - **`src/`** — Core source code
   - **`api/`**: FastAPI backend server (WebSockets, REST endpoints).
@@ -144,7 +144,7 @@ SENTINEL-X relies on a highly scalable, event-driven microservices architecture:
 
 ---
 
-## 🚀 Getting Started
+## Getting Started
 
 ### Prerequisites
 - **Docker & Docker Compose** (Minimum v2.0+)
@@ -171,14 +171,82 @@ docker compose up -d --build
 
 ---
 
-## 🔒 Security & Contribution
+## Security & Contribution
 
 - **Security Audits:** Please report any potential vulnerabilities to the security email listed in `SECURITY.md`. Do not open public issues for zero-days.
 - **Contributing:** We welcome PRs for new Ingestor domains or Playbook configurations. Please review `CONTRIBUTING.md` before submitting.
 
 ---
 
-## 📜 License & Legal
+## Architecture Diagrams
+
+### Sequence Diagram
+
+```mermaid
+sequenceDiagram
+    participant U as User
+    participant F as Frontend
+    participant B as Backend
+    participant K as Kafka
+    participant I as Ingestors
+    participant A as AI Engine
+
+    U->>F: Open dashboard
+    F->>B: Request live status
+    B->>K: Subscribe to event stream
+    K->>I: Push raw sensor events
+    I->>A: Send normalized data
+    A->>B: Return fused threat results
+    B->>F: Push update via WebSocket
+    F->>U: Render live threat map
+```
+
+A high-level operational flow showing how user interactions propagate through the frontend, backend, event bus, and AI engine.
+
+### Class Diagram
+
+```mermaid
+classDiagram
+    class Frontend {
+        +UI views
+        +WebSocket
+    }
+    class Backend {
+        +REST API
+        +WS broadcast
+    }
+    class Persistence {
+        +Postgres
+        +Redis
+    }
+    class Ingestors {
+        +Air
+        +Maritime
+        +RF
+        +Seismic
+        +Cyber
+    }
+    class AIEngine {
+        +PyTorch
+        +Fusion model
+    }
+    class Blockchain {
+        +Ethereum
+        +IPFS
+    }
+
+    Frontend --> Backend
+    Backend --> Persistence
+    Backend --> Ingestors
+    Backend --> AIEngine
+    Backend --> Blockchain
+```
+
+A conceptual class overview that maps the main system components and their primary dependencies.
+
+---
+
+## License & Legal
 
 **SENTINEL-X** is designed for legitimate critical infrastructure defense and national security research. Users take full responsibility for compliance with all applicable local, national, and international laws regarding SIGINT, cyber monitoring, and data privacy.
 
