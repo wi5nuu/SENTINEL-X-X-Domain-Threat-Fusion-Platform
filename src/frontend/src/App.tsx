@@ -118,6 +118,15 @@ function App() {
   const audioCtxRef = useRef<AudioContext | null>(null);
   const trackHistoryRef = useRef<Map<string, Track[]>>(new Map());
 
+  const appendTrackHistory = (track: Track) => {
+    const key = track.label || `${track.lat}_${track.lon}`;
+    const hist = trackHistoryRef.current;
+    if (!hist.has(key)) hist.set(key, []);
+    const arr = hist.get(key)!;
+    arr.push(track);
+    if (arr.length > MAX_TRACK_HISTORY) arr.shift();
+  };
+
   useEffect(() => {
     audioCtxRef.current = new (window.AudioContext || (window as any).webkitAudioContext)();
     return () => { audioCtxRef.current?.close(); };
@@ -136,6 +145,11 @@ function App() {
           if (msg.type === "new_alert") {
             const alert: Alert = msg.payload;
             setAlerts((prev) => [alert, ...prev].slice(0, 100));
+            setDashboard((prev) => prev ? {
+              ...prev,
+              recent_alerts: [alert, ...prev.recent_alerts].slice(0, 20),
+              alerts_24h: prev.alerts_24h + 1,
+            } : prev);
             if ((alert.threat_class === "CATASTROPHIC" || alert.threat_class === "CRITICAL") && !notifiedRef.current.has(alert.alert_id)) {
               notifiedRef.current.add(alert.alert_id);
               if (alert.threat_class === "CATASTROPHIC") {
@@ -148,6 +162,26 @@ function App() {
                 new Notification(`[${alert.threat_class}] ${alert.domain} alert`, { body: alert.description });
               }
             }
+          } else if (msg.type === "new_track") {
+            const track: Track = msg.payload;
+            setTracks((prev) => [track, ...prev].slice(0, 200));
+            appendTrackHistory(track);
+            setDashboard((prev) => {
+              if (!prev) return prev;
+              const active_tracks = { ...prev.active_tracks };
+              if (track.domain === "air") active_tracks.air += 1;
+              else if (track.domain === "maritime") active_tracks.maritime += 1;
+              active_tracks.total += 1;
+              const domain = track.domain || "unknown";
+              const domain_counts = { ...prev.domain_counts, [domain]: (prev.domain_counts[domain] || 0) + 1 };
+              return {
+                ...prev,
+                events_per_hour: prev.events_per_hour + 1,
+                active_tracks,
+                tracks: [track, ...prev.tracks].slice(0, 100),
+                domain_counts,
+              };
+            });
           }
         } catch { }
       };
@@ -189,6 +223,11 @@ function App() {
           const newOnes = data.recent_alerts.filter((a) => !existing.has(a.alert_id));
           return newOnes.length > 0 ? [...newOnes, ...prev].slice(0, 100) : prev;
         });
+        setDashboard((prev) => prev ? {
+          ...prev,
+          recent_alerts: data.recent_alerts,
+          alerts_24h: data.alerts_24h,
+        } : prev);
         for (const a of data.recent_alerts) {
           if ((a.threat_class === "CATASTROPHIC" || a.threat_class === "CRITICAL") && !notifiedRef.current.has(a.alert_id)) {
             notifiedRef.current.add(a.alert_id);
@@ -339,7 +378,7 @@ function App() {
       <div className="flex-1 flex min-h-0">
         {/* LEFT SIDEBAR: ALERTS */}
         <div className="flex flex-col p-1 gap-1 overflow-y-auto shrink-0 border-r relative" style={{ width: `${sidebarWidth}px`, borderColor: "#1E3A5F", background: "#050B14" }}>
-          <div 
+          <div
             className="absolute right-0 top-0 w-1 h-full cursor-col-resize hover:bg-[#00D4FF] z-[100]"
             onMouseDown={() => { isDragging.current = true; }}
           />

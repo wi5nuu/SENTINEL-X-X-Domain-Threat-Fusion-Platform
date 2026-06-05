@@ -114,6 +114,38 @@ async def _track_handler(topic: str, msg: dict):
             "distance_km": msg.get("distance_km"),
             "flight_progress_pct": msg.get("flight_progress_pct"),
         })
+        await ws_manager.broadcast({
+            "type": "new_track",
+            "payload": {
+                "lat": lat,
+                "lon": lon,
+                "label": msg.get("callsign") or msg.get("vessel_name") or msg.get("source", domain),
+                "color": track_color,
+                "domain": domain,
+                "classification": classification,
+                "velocity": float(velocity) if velocity else 0,
+                "is_threat": is_threat,
+                "squawk": msg.get("squawk"),
+                "altitude": msg.get("baro_altitude_m") or msg.get("geo_altitude_m") or 0,
+                "heading": msg.get("true_track_deg") or msg.get("cog_deg") or 0,
+                "is_missile": is_missile,
+                "threat_status": msg.get("threat_status"),
+                "missile_type": msg.get("missile_type"),
+                "missile_id": msg.get("missile_id"),
+                "origin_lat": msg.get("origin_lat"),
+                "origin_lon": msg.get("origin_lon"),
+                "origin_name": msg.get("origin_name"),
+                "target_lat": msg.get("target_lat"),
+                "target_lon": msg.get("target_lon"),
+                "target_name": msg.get("target_name"),
+                "speed_mach": msg.get("speed_mach"),
+                "accuracy_cep_m": msg.get("accuracy_cep_m"),
+                "launch_time": msg.get("launch_time"),
+                "eta_seconds": msg.get("eta_seconds"),
+                "distance_km": msg.get("distance_km"),
+                "flight_progress_pct": msg.get("flight_progress_pct"),
+            },
+        })
 
 
 async def _metric_reset_loop():
