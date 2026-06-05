@@ -184,65 +184,156 @@ docker compose up -d --build
 
 ```mermaid
 sequenceDiagram
-    participant U as User
-    participant F as Frontend
-    participant B as Backend
-    participant K as Kafka
-    participant I as Ingestors
-    participant A as AI Engine
+    participant User
+    participant Frontend
+    participant Backend
+    participant Kafka
+    participant Ingestors
+    participant AIEngine
+    participant ResponseEngine
+    participant Blockchain
+    participant IPFS
+    participant Monitoring
+    participant Database
 
-    U->>F: Open dashboard
-    F->>B: Request live status
-    B->>K: Subscribe to event stream
-    K->>I: Push raw sensor events
-    I->>A: Send normalized data
-    A->>B: Return fused threat results
-    B->>F: Push update via WebSocket
-    F->>U: Render live threat map
+    User->>Frontend: Open dashboard and authenticate
+    Frontend->>Backend: GET /dashboard, subscribe to WebSocket
+    Backend->>Database: Load user config, session state, thresholds
+    Backend->>Monitoring: Report request latency and health
+    Backend->>Frontend: Return initial dashboard payload
+    Ingestors->>Kafka: Publish normalized domain events
+    Kafka->>Backend: Deliver event stream for ingestion
+    Backend->>AIEngine: Forward event batch for fusion scoring
+    AIEngine->>Backend: Return threat classification + confidence
+    Backend->>ResponseEngine: Correlate alerts and recommend playbooks
+    ResponseEngine->>Blockchain: Store audit evidence hash
+    ResponseEngine->>IPFS: Store raw evidence bundle
+    ResponseEngine->>Backend: Return automated action proposal
+    Backend->>Kafka: Publish alert notification event
+    Backend->>Frontend: Broadcast live threat update
+    Frontend->>User: Render threat map, incident details, response status
 ```
 
-A high-level operational flow showing how user interactions propagate through the frontend, backend, event bus, and AI engine.
+A detailed flow of how user interactions, event ingestion, threat fusion, and response automation move through the platform.
 
 ### Class Diagram
 
 ```mermaid
 classDiagram
     class Frontend {
-        +UI views
-        +WebSocket
+        +Dashboard
+        +ThreatMap
+        +WebSocketClient
+        +PlaybookPanel
+        +NotificationFeed
     }
     class Backend {
         +REST API
-        +WS broadcast
-    }
-    class Persistence {
-        +Postgres
-        +Redis
+        +WebSocket Server
+        +Event Router
+        +Auth & Session
+        +Config Loader
     }
     class Ingestors {
-        +Air
-        +Maritime
-        +RF
-        +Seismic
-        +Cyber
+        +AirIngestor
+        +MaritimeIngestor
+        +CyberIngestor
+        +RFIngestor
+        +SeismicIngestor
     }
     class AIEngine {
-        +PyTorch
-        +Fusion model
+        +FeatureEncoder
+        +TemporalTransformer
+        +ThreatClassifier
+        +XAI Explainer
+    }
+    class ResponseEngine {
+        +PlaybookExecutor
+        +AlertCorrelation
+        +IncidentManager
+        +Notification Dispatcher
+    }
+    class Persistence {
+        +PostgreSQL
+        +Redis
+        +Elasticsearch
+        +TimescaleDB
+        +Kafka
     }
     class Blockchain {
-        +Ethereum
-        +IPFS
+        +Ethereum Hardhat
+        +SmartContracts
+        +EvidenceLedger
+    }
+    class IPFS {
+        +EvidenceStorage
+        +CID Registry
+    }
+    class Monitoring {
+        +Prometheus
+        +Grafana
+        +HealthChecks
+        +MetricsExporter
     }
 
-    Frontend --> Backend
-    Backend --> Persistence
-    Backend --> Ingestors
-    Backend --> AIEngine
-    Backend --> Blockchain
+    Frontend --> Backend: REST / WebSocket
+    Backend --> Persistence: store + cache + search
+    Backend --> Kafka: publish/subscribe
+    Backend --> Ingestors: control / config
+    Backend --> AIEngine: inference requests
+    Backend --> ResponseEngine: incident actions
+    ResponseEngine --> Blockchain: audit logging
+    ResponseEngine --> IPFS: evidence storage
+    Backend --> Monitoring: metrics and health
+    Ingestors --> Kafka: event stream
+    Kafka --> Backend: event consumption
 ```
 
-A conceptual class overview that maps the main system components and their primary dependencies.
+A professional architecture overview that maps the core modules, runtime dependencies, and data flows across the Sentinel-X platform.
+
+### Deployment Diagram
+
+```mermaid
+flowchart LR
+    subgraph UI
+        Frontend["Frontend\nReact + Vite"]
+    end
+
+    subgraph API
+        Backend["Backend\nFastAPI + WebSocket"]
+        Kafka["Kafka\nTopic Bus"]
+    end
+
+    subgraph DataStore
+        Postgres["PostgreSQL\nTimescaleDB"]
+        Redis["Redis\nCache & Session"]
+        Elastic["Elasticsearch\nSearch & Analytics"]
+    end
+
+    subgraph Infra
+        Blockchain["Ethereum Hardhat\nAudit Ledger"]
+        IPFS["IPFS\nEvidence Storage"]
+        Monitoring["Prometheus / Grafana\nMetrics + Dashboards"]
+    end
+
+    subgraph Ingestion
+        Ingestors["Ingestors\nAir/Maritime/Cyber/RF/Seismic"]
+    end
+
+    Frontend -->|HTTP / WS| Backend
+    Backend -->|Publish events| Kafka
+    Ingestors -->|Produce events| Kafka
+    Backend -->|Query / store| Postgres
+    Backend -->|Cache / session| Redis
+    Backend -->|Index / search| Elastic
+    Backend -->|Emit metrics| Monitoring
+    Backend -->|Invoke response| Blockchain
+    Backend -->|Store evidence| IPFS
+    Kafka -->|Consume stream| Backend
+    Frontend -->|Monitor UI| Monitoring
+```
+
+A deployment overview showing how the service containers and infrastructure components interact in the Sentinel-X stack.
 
 ---
 
