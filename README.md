@@ -187,8 +187,12 @@ sequenceDiagram
     participant User
     participant Frontend
     participant Backend
-    participant Kafka
+    participant Sensors
+    participant MilitaryIntel
+    participant Satellite
+    participant OSINT
     participant Ingestors
+    participant Kafka
     participant AIEngine
     participant ResponseEngine
     participant Blockchain
@@ -201,6 +205,10 @@ sequenceDiagram
     Backend->>Database: Load user config, session state, thresholds
     Backend->>Monitoring: Report request latency and health
     Backend->>Frontend: Return initial dashboard payload
+    Sensors->>Ingestors: Deliver radar, ADS-B, SIGINT and sensor telemetry
+    MilitaryIntel->>Ingestors: Deliver classified threat feeds
+    Satellite->>Ingestors: Deliver space, orbital and imagery data
+    OSINT->>Ingestors: Deliver open-source cyber and geopolitical feeds
     Ingestors->>Kafka: Publish normalized domain events
     Kafka->>Backend: Deliver event stream for ingestion
     Backend->>AIEngine: Forward event batch for fusion scoring
@@ -240,6 +248,9 @@ classDiagram
         +CyberIngestor
         +RFIngestor
         +SeismicIngestor
+        +MilitaryIntelIngestor
+        +SatelliteIngestor
+        +OSINTIngestor
     }
     class AIEngine {
         +FeatureEncoder
@@ -317,7 +328,7 @@ flowchart LR
     end
 
     subgraph Ingestion
-        Ingestors["Ingestors\nAir/Maritime/Cyber/RF/Seismic"]
+        Ingestors["Ingestors\nAir/Maritime/Cyber/RF/Seismic\nMilitary Intel / Satellite / OSINT"]
     end
 
     Frontend -->|HTTP / WS| Backend
