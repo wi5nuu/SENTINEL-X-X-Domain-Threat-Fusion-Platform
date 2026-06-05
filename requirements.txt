@@ -30,6 +30,6 @@ reportlab==4.0.9
 cryptography==42.0.0
 web3==6.15.1
 eth_typing<4.0.0
-pytest==8.0.0
+pytest==8.4.0
 pytest-asyncio==1.4.0
 pytest-cov==4.1.0
