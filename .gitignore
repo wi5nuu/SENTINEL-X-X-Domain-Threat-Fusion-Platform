@@ -1,21 +1,66 @@
+# Python
 __pycache__/
 *.py[cod]
+*$py.class
 *.egg-info/
+.pytest_cache/
+.ruff_cache/
+.venv/
+venv/
+ENV/
+
+# Distribution / packaging
 dist/
 build/
-.env
-*.log
-.pytest_cache/
-.cache/
-*.db
-*.pt
-*.pth
-models/*.pt
-node_modules/
-dist/
 .next/
+*.tgz
+*.tar.gz
+
+# Environment variables and secrets
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.pub
+*.cert
+*.crt
+*.pfx
+secrets.*
+
+# Databases and Local State
+db.json
+*.db
+*.sqlite
+*.sqlite3
+web3block.txt
+alembic.ini
+
+# Logs
+*.log
+logs_dir/
+logs/
+*.txt.log
+
+# Frontend
+node_modules/
+src/frontend/dist/
+src/frontend/.env.local
+src/frontend/.env.development.local
+src/frontend/.env.test.local
+src/frontend/.env.production.local
+
+# Infrastructure / DevOps
 *.tfstate
 *.tfstate.backup
 .terraform/
-*.tgz
-*.tar.gz
+deploy/ansible/inventory.yml
+!deploy/ansible/inventory.example.yml
+
+# IDE / OS
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
