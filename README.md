@@ -2,7 +2,7 @@
   <img src="public/sentinelpagenondetect.webp" alt="Sentinel-X Logo" width="900">
   
   # SENTINEL-X
-  **Enterprise Multi-Domain Threat Intelligence & Fusion Platform**
+  **Platform Inteligensi Ancaman & Fusion Multi-Domain Perusahaan**
 
   [![License](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
   [![React](https://img.shields.io/badge/Frontend-React%20%7C%20Deck.GL-61DAFB?logo=react&logoColor=black)](https://reactjs.org/)
@@ -11,85 +11,85 @@
   [![Blockchain](https://img.shields.io/badge/Blockchain-Ethereum%20%7C%20IPFS-3C3C3D?logo=ethereum&logoColor=white)](https://ethereum.org/)
   [![Docker](https://img.shields.io/badge/Deployment-Docker%20Compose-2496ED?logo=docker&logoColor=white)](https://www.docker.com/)
 
-  *Advanced Situational Awareness, AI-Powered Correlation, and Automated Incident Response for Security Operations Centers (SOC), Military Command, and Critical Infrastructure Protection.*
+  *Kesadaran Situasional Tingkat Lanjut, Korelasi Berbasis AI, dan Respons Insiden Otomatis untuk Pusat Operasi Keamanan (SOC), Komando Militer, dan Perlindungan Infrastruktur Kritis.*
 </div>
 
 ---
 
-## Executive Overview
+## Ringkasan Eksekutif
 
-**SENTINEL-X** is an ultra-low latency, mission-critical threat fusion platform designed to provide a unified, real-time operating picture. By seamlessly integrating raw intelligence from air, maritime, cyber, space, seismic, and RF domains, the platform eliminates the "swivel-chair" problem faced by modern SOC operators. 
+**SENTINEL-X** adalah platform fusi ancaman mission-critical dengan latensi ultra-rendah yang dirancang untuk memberikan gambaran operasional yang terpadu dan real-time. Dengan mengintegrasikan inteligensi mentah secara mulus dari domain udara, maritim, siber, ruang angkasa, seismik, dan RF, platform ini mengeliminasi masalah "swivel-chair" yang dihadapi oleh operator SOC modern.
 
-Powered by a **PyTorch-based AI Correlation Engine**, SENTINEL-X doesn't just display data—it contextualizes it. It utilizes **Explainable AI (XAI)** to rank threats, calculate ETA regressions, and trigger automated response playbooks. To ensure absolute data integrity and a zero-trust audit trail, all critical events and operator actions are cryptographically hashed and logged directly to an Ethereum-based **Blockchain** and stored securely via **IPFS**.
+Didukung oleh **AI Correlation Engine berbasis PyTorch**, SENTINEL-X tidak hanya menampilkan data—tetapi juga mengontekstualisasikannya. Platform ini menggunakan **Explainable AI (XAI)** untuk menentukan peringkat ancaman, menghitung regresi ETA, dan memicu playbook respons otomatis. Untuk memastikan integritas data mutlak dan jejak audit zero-trust, semua peristiwa kritis dan tindakan operator di-hash secara kriptografis dan dicatat langsung ke **Blockchain** berbasis Ethereum dan disimpan secara aman melalui **IPFS**.
 
-Capable of processing up to **100,000 events/second** with **<50ms p99 latency**, SENTINEL-X represents the next generation of automated defense infrastructure.
-
----
-
-## Platform Visual Tour
-
-SENTINEL-X provides a suite of tactical interfaces tailored for different operational requirements. Below is a detailed look at the platform's core views:
-
-### 1. The Tactical Dashboard (Normal State)
-The primary operational interface in its standard state. When no active threats are detected, the UI remains calm, utilizing a cool-blue cyber aesthetic. It displays live telemetry, active sensor status, and normal tracking logs without overwhelming the operator.
-<div align="center">
-  <img src="public/sentinelpagenondetect.webp" alt="Tactical Dashboard Normal State" width="800">
-</div>
-
-### 2. Active Threat Detection & Alerting
-When the AI Fusion Engine confirms a critical threat, the dashboard dynamically shifts its layout and color scheme. The interface aggressively highlights the anomaly (shifting to red/amber), triggering high-priority modal alerts and focusing the operator's attention entirely on the active incident and recommended playbooks.
-<div align="center">
-  <img src="public/sentinelpagedetected.webp" alt="Active Threat Detected" width="800">
-</div>
-
-### 3. Immersive 3D Global Situational Awareness
-Powered by `deck.gl`, this view provides a fully interactive 3D representation of the globe. Operators can monitor live tracks (including simulated ICBM trajectories and naval fleets) mapped against over 60 real-world military installations. It features a custom WebGL space canvas background complete with auroras, nebulae, and dynamic lighting.
-<div align="center">
-  <img src="public/sentinel3d.webp" alt="3D Global Situational Awareness" width="800">
-</div>
-
-### 4. Global Intelligence Status
-A macro-level dashboard dedicated to global intelligence feeds. It aggregates worldwide cyber threat levels, geopolitical risk indicators, seismic anomalies, and global sensor network health into a single unified summary.
-<div align="center">
-  <img src="public/senstinelpageglobal.webp" alt="Global Intelligence Status" width="800">
-</div>
-
-### 5. Advanced Analytics & Statistics
-A deep-dive analytical view providing historical data correlation, AI performance metrics, threat distribution charts, and system telemetry. Designed with a clean, glassmorphic UI, it strips away unnecessary elements (like emojis) to deliver purely professional, data-dense insights.
-<div align="center">
-  <img src="public/sentinelstatistik.webp" alt="Advanced Analytics and Statistics" width="800">
-</div>
+Mampu memproses hingga **100.000 peristiwa/detik** dengan **latensi p99 <50ms**, SENTINEL-X mewakili generasi berikutnya dari infrastruktur pertahanan otomatis.
 
 ---
 
-## Core Capabilities
+## Tur Visual Platform
 
-### Multi-Domain Data Ingestion
-Seamlessly aggregates and normalizes raw intelligence from 6 key domains via highly optimized Kafka message queues:
-- **Air Defense (ADS-B):** OpenSky Network, ADS-B Exchange integration.
-- **Maritime Security (AIS):** NMEA parser for dark vessel tracking.
-- **Seismic Activity:** USGS earthquake and subterranean monitoring.
-- **RF/SIGINT:** Software-Defined Radio (SDR) signal analysis.
-- **Cyber Warfare:** ICS honeypots and global threat feeds.
-- **Space & Satellite:** NASA datasets and orbital monitoring.
+SENTINEL-X menyediakan serangkaian antarmuka taktis yang disesuaikan untuk berbagai persyaratan operasional. Di bawah ini adalah tampilan mendetail dari tampilan inti platform:
+
+### 1. Dashboard Taktis (Kondisi Normal)
+Antarmuka operasional utama dalam kondisi standarnya. Ketika tidak ada ancaman aktif yang terdeteksi, UI tetap tenang, menggunakan estetika siber berwarna biru sejuk. Ini menampilkan telemetri langsung, status sensor aktif, dan log pelacakan normal tanpa membebani operator.
+<div align="center">
+  <img src="public/sentinelpagenondetect.webp" alt="Dashboard Taktis Kondisi Normal" width="800">
+</div>
+
+### 2. Deteksi Ancaman Aktif & Peringatan
+Ketika AI Fusion Engine mengonfirmasi ancaman kritis, dashboard secara dinamis mengubah tata letak dan skema warnanya. Antarmuka secara agresif menyoroti anomali (berubah menjadi merah/amber), memicu peringatan modal prioritas tinggi dan memfokuskan perhatian operator sepenuhnya pada insiden aktif dan playbook yang direkomendasikan.
+<div align="center">
+  <img src="public/sentinelpagedetected.webp" alt="Ancaman Aktif Terdeteksi" width="800">
+</div>
+
+### 3. Kesadaran Situasional Global 3D Imersif
+Didukung oleh `deck.gl`, tampilan ini memberikan representasi 3D globe yang sepenuhnya interaktif. Operator dapat memantau jejak langsung (termasuk lintasan ICBM simulasi dan armada angkatan laut) yang dipetakan terhadap lebih dari 60 instalasi militer dunia nyata. Fitur ini menyertakan latar belakang kanvas ruang angkasa WebGL kustom lengkap dengan aurora, nebula, dan pencahayaan dinamis.
+<div align="center">
+  <img src="public/sentinel3d.webp" alt="Kesadaran Situasional Global 3D" width="800">
+</div>
+
+### 4. Status Inteligensi Global
+Dashboard tingkat makro yang didedikasikan untuk umpan inteligensi global. Ini mengagregasi tingkat ancaman siber di seluruh dunia, indikator risiko geopolitik, anomali seismik, dan kesehatan jaringan sensor global ke dalam satu ringkasan terpadu.
+<div align="center">
+  <img src="public/senstinelpageglobal.webp" alt="Status Inteligensi Global" width="800">
+</div>
+
+### 5. Analitik & Statistik Tingkat Lanjut
+Tampilan analitis mendalam yang menyediakan korelasi data historis, metrik kinerja AI, grafik distribusi ancaman, dan telemetri sistem. Dirancang dengan UI glassmorphic yang bersih, ini menghilangkan elemen yang tidak perlu (seperti emoji) untuk memberikan wawasan yang murni profesional dan padat data.
+<div align="center">
+  <img src="public/sentinelstatistik.webp" alt="Analitik dan Statistik Tingkat Lanjut" width="800">
+</div>
+
+---
+
+## Kemampuan Inti
+
+### Ingesti Data Multi-Domain
+Mengagregasi dan menormalisasi inteligensi mentah dari 6 domain utama secara mulus melalui antrean pesan Kafka yang sangat dioptimalkan:
+- **Pertahanan Udara (ADS-B):** Integrasi OpenSky Network, ADS-B Exchange.
+- **Keamanan Maritim (AIS):** Parser NMEA untuk pelacakan kapal gelap (dark vessel).
+- **Aktivitas Seismik:** Pemantauan gempa bumi dan bawah tanah USGS.
+- **RF/SIGINT:** Analisis sinyal Software-Defined Radio (SDR).
+- **Perang Siber:** Honeypot ICS dan umpan ancaman global.
+- **Ruang Angkasa & Satelit:** Dataset NASA dan pemantauan orbital.
 
 ### AI Threat Fusion Engine
-- **Multi-Modal Architecture:** Utilizes 5 domain-specific encoders (Conv1D + Attention) feeding into a Temporal Transformer (4 heads, 4 layers, 256 timesteps).
-- **Predictive Analytics:** Outputs 5-level threat classifications, multi-label compound threat types, ETA regression, and confidence scoring.
-- **Explainable AI (XAI):** Provides an attention-based reasoning chain for complete transparency in decision-making, ensuring operators know *why* the AI flagged a threat.
+- **Arsitektur Multi-Modal:** Menggunakan 5 encoder khusus domain (Conv1D + Attention) yang masuk ke Temporal Transformer (4 head, 4 layer, 256 timestep).
+- **Analitik Prediktif:** Menghasilkan klasifikasi ancaman 5 tingkat, tipe ancaman gabungan multi-label, regresi ETA, dan skor kepercayaan.
+- **Explainable AI (XAI):** Menyediakan rantai penalaran berbasis atensi untuk transparansi penuh dalam pengambilan keputusan, memastikan operator mengetahui *mengapa* AI menandai ancaman tersebut.
 
-### Blockchain Evidence Chain (Zero-Trust Audit)
-- **ThreatLedger.sol:** Smart contract ensuring immutable threat event logging via cryptographic hash chaining.
-- **ResponseLog.sol:** Smart contract providing a tamper-proof audit trail for operator actions.
-- **IPFS Integration:** Decentralized storage for bundling raw sensor evidence (PCAP files, radar sweeps) with secure IPFS CIDs, ensuring evidence cannot be tampered with by bad actors.
+### Rantai Bukti Blockchain (Audit Zero-Trust)
+- **ThreatLedger.sol:** Smart contract yang memastikan pencatatan peristiwa ancaman yang tidak dapat diubah melalui perantaian hash kriptografis.
+- **ResponseLog.sol:** Smart contract yang menyediakan jejak audit tahan rusak untuk tindakan operator.
+- **Integrasi IPFS:** Penyimpanan terdesentralisasi untuk membundel bukti sensor mentah (file PCAP, sapuan radar) dengan CID IPFS yang aman, memastikan bukti tidak dapat dirusak oleh pihak jahat.
 
-### Automated Incident Response
-- **5-Level Threat Matrix:** Automatically scales from *INFORMATIONAL* > *SUSPICIOUS* > *ELEVATED* > *CRITICAL* > *CATASTROPHIC*.
-- **YAML Playbook Engine:** Executes automated response phases while supporting manual operator approval gates for critical actions (e.g., firewall isolation, kinetic response authorization).
+### Respons Insiden Otomatis
+- **Matriks Ancaman 5 Tingkat:** Secara otomatis berskala dari *INFORMATIONAL* > *SUSPICIOUS* > *ELEVATED* > *CRITICAL* > *CATASTROPHIC*.
+- **YAML Playbook Engine:** Mengeksekusi fase respons otomatis sambil mendukung gerbang persetujuan operator manual untuk tindakan kritis (misalnya, isolasi firewall, otorisasi respons kinetik).
 
 ---
 
-## Data Sources & Simulation
+## Sumber Data & Simulasi
 
 SENTINEL-X beroperasi dengan pendekatan hibrida (hybrid), menggabungkan simulasi taktis tingkat tinggi dengan integrasi data dunia nyata:
 
@@ -108,9 +108,9 @@ Selain data simulasi, Sentinel dirancang untuk terhubung ke sumber data dunia ny
 
 ---
 
-## System Architecture
+## Arsitektur Sistem
 
-SENTINEL-X relies on a highly scalable, event-driven microservices architecture:
+SENTINEL-X bergantung pada arsitektur microservices berbasis peristiwa yang sangat skalabel:
 
 ```text
                     ┌────────────────────────────┐
@@ -134,7 +134,7 @@ SENTINEL-X relies on a highly scalable, event-driven microservices architecture:
        └─────────────────────────┼─────────────────────────┘
                                  ▼
 ┌──────────────────────────────────────────────────────────┐
-│                      Persistence & Shared                │
+│               Persistensi & Berbagi Data                 │
 ├──────────────────────────┬──────────────┬────────────────┤
 │ PostgreSQL (TimescaleDB) │    Redis     │ Elasticsearch  │
 ├──────────────────────────┼──────────────┴────────────────┤
@@ -146,60 +146,60 @@ SENTINEL-X relies on a highly scalable, event-driven microservices architecture:
 
 ---
 
-## Project Structure
+## Struktur Proyek
 
-- **`src/`** — Core source code
-  - **`api/`**: FastAPI backend server (WebSockets, REST endpoints).
-  - **`frontend/`**: React-based UI (Vite, TypeScript, Deck.gl, Leaflet).
-  - **`ai_engine/`**: PyTorch ML models and inference pipelines.
-  - **`ingestors/`**: Data ingestion modules for external API polling and socket parsing.
-  - **`blockchain/`**: Ethereum smart contracts (`.sol`) and Web3/IPFS integration scripts.
-  - **`response/`**: Playbook automation scripts.
-- **`config/`** — Centralized `.env` and YAML configurations.
-- **`docker/`** — Dockerfiles and entrypoint configurations.
+- **`src/`** — Kode sumber inti
+  - **`api/`**: Server backend FastAPI (WebSocket, REST endpoint).
+  - **`frontend/`**: UI berbasis React (Vite, TypeScript, Deck.gl, Leaflet).
+  - **`ai_engine/`**: Model ML PyTorch dan pipeline inferensi.
+  - **`ingestors/`**: Modul ingesti data untuk polling API eksternal dan parsing socket.
+  - **`blockchain/`**: Smart contract Ethereum (`.sol`) dan skrip integrasi Web3/IPFS.
+  - **`response/`**: Skrip otomatisasi playbook.
+- **`config/`** — Konfigurasi `.env` dan YAML terpusat.
+- **`docker/`** — Dockerfile dan konfigurasi entrypoint.
 - **`deploy/`** — Infrastructure as Code (Ansible/Terraform).
-- **`tests/`** — Pytest suites for CI/CD pipelines.
-- **`public/`** — Static assets and documentation imagery.
+- **`tests/`** — Suite Pytest untuk pipeline CI/CD.
+- **`public/`** — Aset statis dan dokumentasi gambar.
 
 ---
 
-## Getting Started
+## Memulai
 
-### Prerequisites
-- **Docker & Docker Compose** (Minimum v2.0+)
-- **Node.js** (v18+ for local frontend development)
-- **Python** (3.10+ for local backend development)
-- Minimum System RAM: 16GB (due to AI models and Elasticsearch)
+### Prasyarat
+- **Docker & Docker Compose** (Minimal v2.0+)
+- **Node.js** (v18+ untuk pengembangan frontend lokal)
+- **Python** (3.10+ untuk pengembangan backend lokal)
+- RAM Sistem Minimal: 16GB (karena model AI dan Elasticsearch)
 
-### Deployment via Docker (Recommended)
-Launch the entire microservices stack (Frontend, API, Kafka, Zookeeper, Postgres, Redis, IPFS, Hardhat) with a single command:
+### Deployment melalui Docker (Direkomendasikan)
+Luncurkan seluruh tumpukan microservices (Frontend, API, Kafka, Zookeeper, Postgres, Redis, IPFS, Hardhat) dengan satu perintah:
 
 ```bash
-# Clone the repository
+# Klon repositori
 git clone https://github.com/yourusername/sentinel-x.git
 cd sentinel-x
 
-# Build and deploy all containers in detached mode
+# Bangun dan deploy semua kontainer dalam mode detached
 docker compose up -d --build
 ```
 
-**Access Points:**
-- **Tactical Dashboard:** [http://localhost:3000](http://localhost:3000)
-- **FastAPI Swagger Docs:** [http://localhost:8000/docs](http://localhost:8000/docs)
-- **Prometheus/Grafana (if enabled):** [http://localhost:3001](http://localhost:3001)
+**Titik Akses:**
+- **Dashboard Taktis:** [http://localhost:3000](http://localhost:3000)
+- **Dokumentasi Swagger FastAPI:** [http://localhost:8000/docs](http://localhost:8000/docs)
+- **Prometheus/Grafana (jika diaktifkan):** [http://localhost:3001](http://localhost:3001)
 
 ---
 
-## Security & Contribution
+## Keamanan & Kontribusi
 
-- **Security Audits:** Please report any potential vulnerabilities to the security email listed in `SECURITY.md`. Do not open public issues for zero-days.
-- **Contributing:** We welcome PRs for new Ingestor domains or Playbook configurations. Please review `CONTRIBUTING.md` before submitting.
+- **Audit Keamanan:** Harap laporkan kerentanan potensial ke email keamanan yang tercantum di `SECURITY.md`. Jangan membuka issue publik untuk zero-day.
+- **Kontribusi:** Kami menyambut PR untuk domain Ingestor baru atau konfigurasi Playbook. Harap tinjau `CONTRIBUTING.md` sebelum mengirimkan.
 
 ---
 
-## Architecture Diagrams
+## Diagram Arsitektur
 
-### Sequence Diagram
+### Diagram Urutan (Sequence Diagram)
 
 ```mermaid
 sequenceDiagram
@@ -219,31 +219,31 @@ sequenceDiagram
     participant Monitoring
     participant Database
 
-    User->>Frontend: Open dashboard and authenticate
-    Frontend->>Backend: GET /dashboard, subscribe to WebSocket
-    Backend->>Database: Load user config, session state, thresholds
-    Backend->>Monitoring: Report request latency and health
-    Backend->>Frontend: Return initial dashboard payload
-    Sensors->>Ingestors: Deliver radar, ADS-B, SIGINT and sensor telemetry
-    MilitaryIntel->>Ingestors: Deliver classified threat feeds
-    Satellite->>Ingestors: Deliver space, orbital and imagery data
-    OSINT->>Ingestors: Deliver open-source cyber and geopolitical feeds
-    Ingestors->>Kafka: Publish normalized domain events
-    Kafka->>Backend: Deliver event stream for ingestion
-    Backend->>AIEngine: Forward event batch for fusion scoring
-    AIEngine->>Backend: Return threat classification + confidence
-    Backend->>ResponseEngine: Correlate alerts and recommend playbooks
-    ResponseEngine->>Blockchain: Store audit evidence hash
-    ResponseEngine->>IPFS: Store raw evidence bundle
-    ResponseEngine->>Backend: Return automated action proposal
-    Backend->>Kafka: Publish alert notification event
-    Backend->>Frontend: Broadcast live threat update
-    Frontend->>User: Render threat map, incident details, response status
+    User->>Frontend: Buka dashboard dan autentikasi
+    Frontend->>Backend: GET /dashboard, berlangganan WebSocket
+    Backend->>Database: Muat konfigurasi pengguna, status sesi, ambang batas
+    Backend->>Monitoring: Laporkan latensi permintaan dan kesehatan
+    Backend->>Frontend: Kembalikan payload awal dashboard
+    Sensors->>Ingestors: Kirim radar, ADS-B, SIGINT dan telemetri sensor
+    MilitaryIntel->>Ingestors: Kirim umpan ancaman terklasifikasi
+    Satellite->>Ingestors: Kirim data ruang angkasa, orbital, dan citra
+    OSINT->>Ingestors: Kirim umpan siber open-source dan geopolitik
+    Ingestors->>Kafka: Publikasikan peristiwa domain yang dinormalisasi
+    Kafka->>Backend: Kirim aliran peristiwa untuk ingesti
+    Backend->>AIEngine: Teruskan batch peristiwa untuk penilaian fusi
+    AIEngine->>Backend: Kembalikan klasifikasi ancaman + kepercayaan
+    Backend->>ResponseEngine: Korelasikan peringatan dan rekomendasikan playbook
+    ResponseEngine->>Blockchain: Simpan hash bukti audit
+    ResponseEngine->>IPFS: Simpan bundel bukti mentah
+    ResponseEngine->>Backend: Kembalikan proposal tindakan otomatis
+    Backend->>Kafka: Publikasikan peristiwa pemberitahuan peringatan
+    Backend->>Frontend: Siarkan pembaruan ancaman langsung
+    Frontend->>User: Render peta ancaman, detail insiden, status respons
 ```
 
-A detailed flow of how user interactions, event ingestion, threat fusion, and response automation move through the platform.
+Aliran mendetail tentang bagaimana interaksi pengguna, ingesti peristiwa, fusi ancaman, dan otomatisasi respons bergerak melalui platform.
 
-### Class Diagram
+### Diagram Kelas (Class Diagram)
 
 ```mermaid
 classDiagram
@@ -307,21 +307,21 @@ classDiagram
     }
 
     Frontend --> Backend: REST / WebSocket
-    Backend --> Persistence: store + cache + search
-    Backend --> Kafka: publish/subscribe
-    Backend --> Ingestors: control / config
-    Backend --> AIEngine: inference requests
-    Backend --> ResponseEngine: incident actions
-    ResponseEngine --> Blockchain: audit logging
-    ResponseEngine --> IPFS: evidence storage
-    Backend --> Monitoring: metrics and health
-    Ingestors --> Kafka: event stream
-    Kafka --> Backend: event consumption
+    Backend --> Persistence: simpan + cache + cari
+    Backend --> Kafka: publikasi/langganan
+    Backend --> Ingestors: kontrol / konfigurasi
+    Backend --> AIEngine: permintaan inferensi
+    Backend --> ResponseEngine: tindakan insiden
+    ResponseEngine --> Blockchain: pencatatan audit
+    ResponseEngine --> IPFS: penyimpanan bukti
+    Backend --> Monitoring: metrik dan kesehatan
+    Ingestors --> Kafka: aliran peristiwa
+    Kafka --> Backend: konsumsi peristiwa
 ```
 
-A professional architecture overview that maps the core modules, runtime dependencies, and data flows across the Sentinel-X platform.
+Tinjauan arsitektur profesional yang memetakan modul inti, dependensi runtime, dan aliran data di seluruh platform Sentinel-X.
 
-### Deployment Diagram
+### Diagram Deployment
 
 ```mermaid
 flowchart LR
@@ -336,44 +336,44 @@ flowchart LR
 
     subgraph DataStore
         Postgres["PostgreSQL\nTimescaleDB"]
-        Redis["Redis\nCache & Session"]
-        Elastic["Elasticsearch\nSearch & Analytics"]
+        Redis["Redis\nCache & Sesi"]
+        Elastic["Elasticsearch\nCari & Analitik"]
     end
 
     subgraph Infra
-        Blockchain["Ethereum Hardhat\nAudit Ledger"]
-        IPFS["IPFS\nEvidence Storage"]
-        Monitoring["Prometheus / Grafana\nMetrics + Dashboards"]
+        Blockchain["Ethereum Hardhat\nBuku Besar Audit"]
+        IPFS["IPFS\nPenyimpanan Bukti"]
+        Monitoring["Prometheus / Grafana\nMetrik + Dashboard"]
     end
 
     subgraph Ingestion
-        Ingestors["Ingestors\nAir/Maritime/Cyber/RF/Seismic\nMilitary Intel / Satellite / OSINT"]
+        Ingestors["Ingestors\nUdara/Maritim/Siber/RF/Seismik\nIntel Militer / Satelit / OSINT"]
     end
 
     Frontend -->|HTTP / WS| Backend
-    Backend -->|Publish events| Kafka
-    Ingestors -->|Produce events| Kafka
-    Backend -->|Query / store| Postgres
-    Backend -->|Cache / session| Redis
-    Backend -->|Index / search| Elastic
-    Backend -->|Emit metrics| Monitoring
-    Backend -->|Invoke response| Blockchain
-    Backend -->|Store evidence| IPFS
-    Kafka -->|Consume stream| Backend
-    Frontend -->|Monitor UI| Monitoring
+    Backend -->|Publikasi peristiwa| Kafka
+    Ingestors -->|Hasilkan peristiwa| Kafka
+    Backend -->|Kueri / simpan| Postgres
+    Backend -->|Cache / sesi| Redis
+    Backend -->|Indeks / cari| Elastic
+    Backend -->|Keluarkan metrik| Monitoring
+    Backend -->|Panggil respons| Blockchain
+    Backend -->|Simpan bukti| IPFS
+    Kafka -->|Konsumsi aliran| Backend
+    Frontend -->|Pantau UI| Monitoring
 ```
 
-A deployment overview showing how the service containers and infrastructure components interact in the Sentinel-X stack.
+Tinjauan deployment yang menunjukkan bagaimana kontainer layanan dan komponen infrastruktur berinteraksi dalam tumpukan Sentinel-X.
 
 ---
 
-## License & Legal
+## Lisensi & Hukum
 
-**SENTINEL-X** is designed for legitimate critical infrastructure defense and national security research. Users take full responsibility for compliance with all applicable local, national, and international laws regarding SIGINT, cyber monitoring, and data privacy.
+**SENTINEL-X** dirancang untuk pertahanan infrastruktur kritis yang sah dan penelitian keamanan nasional. Pengguna bertanggung jawab penuh atas kepatuhan terhadap semua hukum lokal, nasional, dan internasional yang berlaku mengenai SIGINT, pemantauan siber, dan privasi data.
 
-Released under the **MIT License**. See `LICENSE` for details.
+Dirilis di bawah **Lisensi MIT**. Lihat `LICENSE` untuk detailnya.
 
 <div align="center">
   <br>
-  <i>Developed with precision and security in mind.</i>
+  <i>Dikembangkan dengan presisi dan mempertimbangkan keamanan.</i>
 </div>
