@@ -174,7 +174,7 @@ services:
   sentinel-ingestor-maritime:
     build:
       context: .
-      dockerfile: docker/Dockerfile.ingestor
+      dockerfile: docker/Dockerfile.maritime-real
     container_name: sentinel-ingestor-maritime
     depends_on:
       kafka:
@@ -182,7 +182,6 @@ services:
     env_file: .env
     environment:
       INGESTOR_TYPE: maritime
-
     logging: *default-logging
 
   sentinel-ingestor-seismic:
@@ -338,17 +337,17 @@ services:
 
     logging: *default-logging
 
-  sentinel-synthetic:
-    build:
-      context: .
-      dockerfile: docker/Dockerfile.synthetic
-    container_name: sentinel-synthetic
-    depends_on:
-      kafka:
-        condition: service_healthy
-    env_file: .env
-
-    logging: *default-logging
+  # sentinel-synthetic:
+  #   build:
+  #     context: .
+  #     dockerfile: docker/Dockerfile.synthetic
+  #   container_name: sentinel-synthetic
+  #   depends_on:
+  #     kafka:
+  #       condition: service_healthy
+  #   env_file: .env
+  #   logging: *default-logging
+  # DISABLED: Using real-time data sources only
 
   gateway:
     build:
@@ -372,6 +371,67 @@ services:
     container_name: sentinel-nasa
     depends_on:
       kafka:
+        condition: service_healthy
+    env_file: .env
+    logging: *default-logging
+
+  sentinel-threat-intel:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.threat-intel
+    container_name: sentinel-threat-intel
+    depends_on:
+      kafka:
+        condition: service_healthy
+    env_file: .env
+    logging: *default-logging
+
+  sentinel-usgs-seismic:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.usgs
+    container_name: sentinel-usgs-seismic
+    depends_on:
+      kafka:
+        condition: service_healthy
+    env_file: .env
+    logging: *default-logging
+
+  sentinel-flightaware:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.flightaware
+    container_name: sentinel-flightaware
+    depends_on:
+      kafka:
+        condition: service_healthy
+    env_file: .env
+    logging: *default-logging
+    profiles:
+      - enhanced
+
+  sentinel-weather:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.weather
+    container_name: sentinel-weather
+    depends_on:
+      kafka:
+        condition: service_healthy
+    env_file: .env
+    logging: *default-logging
+    profiles:
+      - enhanced
+
+  sentinel-correlation-engine:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.correlation
+    container_name: sentinel-correlation-engine
+    depends_on:
+      kafka:
+        condition: service_healthy
+      postgres:
         condition: service_healthy
     env_file: .env
     logging: *default-logging

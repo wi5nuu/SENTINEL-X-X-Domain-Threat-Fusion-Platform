@@ -1,8 +1,6 @@
 import asyncio
 import json
 import uuid
-import random
-import time
 import os
 from datetime import datetime, timedelta
 from typing import Optional, List
@@ -238,17 +236,36 @@ async def get_dashboard():
     air_count = sum(1 for t in track_buffer if t.get("domain") == "air")
     maritime_count = sum(1 for t in track_buffer if t.get("domain") == "maritime")
 
+    # Sensor status derived from real event counts (active if events > 0 in last cycle)
+    sensor_status = {
+        "opensky": domain_counts.get("air", 0) > 0,
+        "adsb": domain_counts.get("air", 0) > 0,
+        "ais": domain_counts.get("maritime", 0) > 0,
+        "usgs": domain_counts.get("seismic", 0) > 0,
+        "noaa": domain_counts.get("rf", 0) > 0,
+        "sdr": domain_counts.get("rf", 0) > 0,
+        "honeypot": domain_counts.get("cyber", 0) > 0,
+        "otx": domain_counts.get("cyber", 0) > 0,
+    }
+
+    # Blockchain real sync status - check Ethereum node connectivity
+    blockchain_synced = False
+    try:
+        from src.blockchain.service import BlockchainService
+        bc = BlockchainService()
+        await bc.connect()
+        blockchain_synced = bc.w3 is not None and bc.w3.is_connected()
+    except Exception:
+        blockchain_synced = False
+
     return {
         "events_per_hour": total_events,
         "active_tracks": {"air": air_count, "maritime": maritime_count, "total": len(track_buffer)},
         "alerts_24h": alerts_24h,
         "recent_alerts": alerts_list,
         "threat_score": threat_score,
-        "sensors": {
-            "opensky": True, "adsb": True, "ais": True, "usgs": True,
-            "noaa": True, "sdr": True, "honeypot": True, "otx": True,
-        },
-        "blockchain_synced": True,
+        "sensors": sensor_status,
+        "blockchain_synced": blockchain_synced,
         "tracks": tracks_list,
         "domain_counts": domain_counts,
     }
@@ -481,13 +498,58 @@ async def situational_awareness():
 
 @app.post("/api/v1/threat/assess")
 async def assess_threat(event: dict):
-    threat = CompoundThreat(
-        threat_class=ThreatLevel(random.choice(list(ThreatLevel))),
-        confidence=random.uniform(0.5, 0.99),
-        compound_pattern=random.choice(["maritime_deception", "cyber_physical", "air_intrusion", "none"]),
-        reasoning_chain=[
-            {"step": 1, "domain": "analysis", "observation": "Event received and analyzed", "contribution": 1.0, "evidence": event}
-        ],
-        recommended_actions=["Monitor and track", "Notify duty officer"],
+    """Assess threat level based on actual event data fields."""
+    domain = event.get("domain", "unknown")
+    threat_flags = event.get("threat_flags", [])
+    anomaly_flags = event.get("anomaly_flags", [])
+    classification = event.get("classification", "")
+    squawk = event.get("squawk", "")
+    severity = event.get("severity", event.get("threat_class", "INFORMATIONAL"))
+
+    # Derive threat class from real event attributes
+    if squawk in ("7500",) or "hijack" in str(threat_flags):
+        threat_class = ThreatLevel.catastrophic
+        confidence = 0.95
+    elif squawk in ("7700",) or severity == "CRITICAL" or "critical" in str(threat_flags).lower():
+        threat_class = ThreatLevel.critical
+        confidence = 0.88
+    elif squawk in ("7600",) or severity == "ELEVATED" or classification == "military":
+        threat_class = ThreatLevel.elevated
+        confidence = 0.75
+    elif threat_flags or anomaly_flags or severity == "SUSPICIOUS":
+        threat_class = ThreatLevel.suspicious
+        confidence = 0.60
+    else:
+        threat_class = ThreatLevel.informational
+        confidence = 0.40
+
+    # Build reasoning from actual flags
+    reasoning = []
+    if squawk:
+        reasoning.append({"step": 1, "domain": domain, "observation": f"Squawk code {squawk} detected", "contribution": 0.4})
+    if threat_flags:
+        reasoning.append({"step": len(reasoning)+1, "domain": domain, "observation": f"Threat flags: {threat_flags}", "contribution": 0.35})
+    if anomaly_flags:
+        reasoning.append({"step": len(reasoning)+1, "domain": domain, "observation": f"Anomaly flags: {anomaly_flags}", "contribution": 0.25})
+    if not reasoning:
+        reasoning.append({"step": 1, "domain": domain, "observation": "Event assessed - no threat indicators", "contribution": 0.0})
+
+    compound = CompoundThreat(
+        threat_class=threat_class,
+        confidence=confidence,
+        compound_pattern=f"{domain}_event" if domain != "unknown" else "none",
+        reasoning_chain=reasoning,
+        recommended_actions=_get_recommended_actions(threat_class),
     )
-    return threat.model_dump()
+    return compound.model_dump()
+
+
+def _get_recommended_actions(threat_class: ThreatLevel) -> list:
+    actions = {
+        ThreatLevel.catastrophic: ["Activate full emergency protocol", "Notify command authority", "Deploy countermeasures"],
+        ThreatLevel.critical: ["Alert duty officer", "Activate playbook", "Increase monitoring"],
+        ThreatLevel.elevated: ["Monitor closely", "Prepare response team", "Log incident"],
+        ThreatLevel.suspicious: ["Flag for review", "Increase sensor focus", "Log event"],
+        ThreatLevel.informational: ["Log and monitor"],
+    }
+    return actions.get(threat_class, ["Log and monitor"])

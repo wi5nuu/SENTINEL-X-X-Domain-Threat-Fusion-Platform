@@ -16,9 +16,10 @@ build/
 *.tgz
 *.tar.gz
 
-# Environment variables and secrets
+# CRITICAL: Environment variables and secrets
 .env
-.env.*
+.env.local
+.env.*.local
 !.env.example
 *.pem
 *.key
@@ -26,7 +27,13 @@ build/
 *.cert
 *.crt
 *.pfx
-secrets.*
+secrets/
+.secrets/
+
+# CRITICAL: Configuration
+.sentinel_config
+config.local
+config.production
 
 # Databases and Local State
 db.json
@@ -35,16 +42,26 @@ db.json
 *.sqlite3
 web3block.txt
 alembic.ini
+*.db-shm
+*.db-wal
+postgres_data/
+redis_data/
+elasticsearch_data/
+kafka_data/
+ipfs_data/
 
 # Logs
 *.log
 logs_dir/
 logs/
 *.txt.log
+audit_logs/
+security_logs/
 
 # Frontend
 node_modules/
 src/frontend/dist/
+src/frontend/build/
 src/frontend/.env.local
 src/frontend/.env.development.local
 src/frontend/.env.test.local
@@ -56,6 +73,23 @@ src/frontend/.env.production.local
 .terraform/
 deploy/ansible/inventory.yml
 !deploy/ansible/inventory.example.yml
+docker-compose.override.yml
+docker-compose.prod.yml
+
+# Backups
+backups/
+*.backup
+*.bak
+*.dump
+*.sql
+
+# Development and Debug
+debug/
+.debug/
+core.*
+*.core
+*.dmp
+memory_dump/
 
 # IDE / OS
 .vscode/
@@ -64,3 +98,25 @@ deploy/ansible/inventory.yml
 Thumbs.db
 *.swp
 *.swo
+
+# AI Models (large files)
+models/*.pt
+models/*.pth
+models/*.h5
+models/*.onnx
+!models/.gitkeep
+
+# Data files
+data/raw/
+data/processed/
+*.csv
+*.parquet
+*.feather
+
+# Testing with real data
+test_data/real/
+fixtures/production/
+
+# Installation markers
+.installation_complete
+.setup_complete

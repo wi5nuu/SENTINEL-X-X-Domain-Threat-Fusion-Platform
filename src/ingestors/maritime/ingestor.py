@@ -288,8 +288,10 @@ class MaritimeDomainIngestor:
         logger.info("Maritime Domain Ingestor started")
         tasks = [
             self.poll_ais_stream(),
-            self.simulated_ais_generator(),
         ]
+        # Synthetic mode only when explicitly enabled
+        if getattr(settings, 'enable_synthetic_data', False):
+            tasks.append(self.simulated_ais_generator())
         await asyncio.gather(*tasks)
 
     async def stop(self):
@@ -300,24 +302,67 @@ class MaritimeDomainIngestor:
 
     @track_latency("maritime")
     async def poll_ais_stream(self):
+        """Poll real AIS data from AISHub. Falls back to parse-test with minimal samples."""
+        aishub_username = getattr(settings, 'aishub_username', '')
+
         while self.running:
-            await asyncio.sleep(10)
+            await asyncio.sleep(60)
             try:
-                nmea_samples = self._generate_nmea_samples(5)
-                for sentence in nmea_samples:
-                    parsed = self.parser.parse_nmea(sentence)
-                    if parsed:
-                        vessel = self._build_vessel(parsed)
-                        await self._process_vessel(vessel)
+                if aishub_username:
+                    # Real AISHub poll
+                    resp = await self.http_client.get(
+                        f"{getattr(settings, 'aishub_url', 'http://data.aishub.net')}/ws.php",
+                        params={
+                            "username": aishub_username,
+                            "format": 1,
+                            "output": "json",
+                            "compress": 0
+                        }
+                    )
+                    if resp.status_code == 200:
+                        data = resp.json()
+                        vessels_raw = data if isinstance(data, list) else data.get("data", [])
+                        count = 0
+                        for entry in vessels_raw[:200]:
+                            mmsi = str(entry.get("MMSI", "")).zfill(9)
+                            lat = float(entry.get("LATITUDE", 0))
+                            lon = float(entry.get("LONGITUDE", 0))
+                            if not mmsi or mmsi == "000000000":
+                                continue
+                            if not (-90 <= lat <= 90 and -180 <= lon <= 180):
+                                continue
+                            parsed = {
+                                "mmsi": mmsi,
+                                "lat": lat,
+                                "lon": lon,
+                                "sog_knots": float(entry.get("SOG", 0)),
+                                "cog_deg": float(entry.get("COG", 0)),
+                                "heading_deg": entry.get("HEADING"),
+                                "nav_status": "underway",
+                                "ais_class": "A",
+                                "vessel_name": entry.get("NAME", ""),
+                                "vessel_type": self.parser._map_vessel_type(int(entry.get("TYPE", 0))),
+                            }
+                            vessel = self._build_vessel(parsed)
+                            await self._process_vessel(vessel)
+                            count += 1
+                        logger.info(f"AISHub real poll complete: {count} vessels")
+                    else:
+                        logger.warning(f"AISHub API error: {resp.status_code}")
+                else:
+                    logger.debug("AISHub username not configured - maritime data limited. Set AISHUB_USERNAME in .env")
+
             except Exception as e:
                 metrics.errors_total.labels(service="maritime_ingestor", error_type="ais_poll").inc()
                 logger.error("AIS poll error", extra={"error": str(e)})
 
     async def simulated_ais_generator(self):
+        """AIS simulation - only if synthetic enabled"""
         while self.running:
             await asyncio.sleep(2)
-            vessel = self._create_simulated_vessel()
-            await self._process_vessel(vessel)
+            if getattr(settings, 'enable_synthetic_data', False):
+                vessel = self._create_simulated_vessel()
+                await self._process_vessel(vessel)
 
     async def _process_vessel(self, vessel: VesselTrack):
         metrics.events_ingested.labels(domain="maritime", source="ais").inc()

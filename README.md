@@ -2,7 +2,7 @@
   <img src="public/sentinelpagenondetect.webp" alt="Sentinel-X Logo" width="900">
   
   # SENTINEL-X
-  **Platform Inteligensi Ancaman & Fusion Multi-Domain Perusahaan**
+  **Platform Inteligensi Ancaman & Fusion Multi-Domain - Proof of Concept**
 
   [![License](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
   [![React](https://img.shields.io/badge/Frontend-React%20%7C%20Deck.GL-61DAFB?logo=react&logoColor=black)](https://reactjs.org/)
@@ -11,18 +11,33 @@
   [![Blockchain](https://img.shields.io/badge/Blockchain-Ethereum%20%7C%20IPFS-3C3C3D?logo=ethereum&logoColor=white)](https://ethereum.org/)
   [![Docker](https://img.shields.io/badge/Deployment-Docker%20Compose-2496ED?logo=docker&logoColor=white)](https://www.docker.com/)
 
-  *Kesadaran Situasional Tingkat Lanjut, Korelasi Berbasis AI, dan Respons Insiden Otomatis untuk Pusat Operasi Keamanan (SOC), Komando Militer, dan Perlindungan Infrastruktur Kritis.*
+  > **PENTING: Ini adalah proyek simulasi dan proof-of-concept yang dikembangkan untuk tujuan edukasi, research, dan demonstrasi konsep. Bukan sistem operasional untuk deployment production.**
+  
+  *Platform demonstrasi untuk kesadaran situasional, korelasi berbasis AI, dan respons insiden otomatis.*
 </div>
 
 ---
 
-## Ringkasan Eksekutif
+## Tentang Proyek
 
-**SENTINEL-X** adalah platform fusi ancaman mission-critical dengan latensi ultra-rendah yang dirancang untuk memberikan gambaran operasional yang terpadu dan real-time. Dengan mengintegrasikan inteligensi mentah secara mulus dari domain udara, maritim, siber, ruang angkasa, seismik, dan RF, platform ini mengeliminasi masalah "swivel-chair" yang dihadapi oleh operator SOC modern.
+**SENTINEL-X** adalah **proof-of-concept platform** yang dikembangkan sebagai simulasi dan demonstrasi konsep untuk sistem threat intelligence dan monitoring multi-domain. Proyek ini berawal dari **ide** untuk membuat platform yang bisa mengintegrasikan berbagai sumber data untuk situational awareness.
 
-Didukung oleh **AI Correlation Engine berbasis PyTorch**, SENTINEL-X tidak hanya menampilkan data—tetapi juga mengontekstualisasikannya. Platform ini menggunakan **Explainable AI (XAI)** untuk menentukan peringkat ancaman, menghitung regresi ETA, dan memicu playbook respons otomatis. Untuk memastikan integritas data mutlak dan jejak audit zero-trust, semua peristiwa kritis dan tindakan operator di-hash secara kriptografis dan dicatat langsung ke **Blockchain** berbasis Ethereum dan disimpan secara aman melalui **IPFS**.
+### Status Proyek:
+- **Educational Purpose**: Dibuat untuk pembelajaran dan demonstrasi konsep
+- **Research Project**: Eksplorasi teknologi AI, blockchain, dan real-time data processing
+- **Proof of Concept**: Demonstrasi bagaimana berbagai teknologi dapat diintegrasikan
+- **Not Production-Ready**: Bukan sistem operasional untuk kebutuhan critical infrastructure
 
-Mampu memproses hingga **100.000 peristiwa/detik** dengan **latensi p99 <50ms**, SENTINEL-X mewakili generasi berikutnya dari infrastruktur pertahanan otomatis.
+### Fitur yang Didemonstrasikan:
+- Integrasi multi-domain data sources (aviation, maritime, cyber, space, seismic)
+- Real-time data streaming dan event processing
+- AI/ML untuk threat correlation dan pattern analysis
+- Blockchain untuk audit trail immutability
+- Interactive 3D visualization dengan globe view
+- Dashboard responsif dengan real-time updates
+
+### Teknologi yang Digunakan:
+Platform ini mengeksplorasi penggunaan teknologi modern seperti FastAPI, React, PyTorch, Ethereum, Kafka, dan TimescaleDB dalam satu sistem terintegrasi untuk keperluan demonstrasi dan pembelajaran.
 
 ---
 
@@ -89,22 +104,28 @@ Mengagregasi dan menormalisasi inteligensi mentah dari 6 domain utama secara mul
 
 ---
 
-## Sumber Data & Simulasi
+## Sumber Data Real-Time
 
-SENTINEL-X beroperasi dengan pendekatan hibrida (hybrid), menggabungkan simulasi taktis tingkat tinggi dengan integrasi data dunia nyata:
+SENTINEL-X mengintegrasikan data real-time dari berbagai sumber publik dan threat intelligence feeds untuk memberikan situational awareness yang komprehensif:
 
-### 1. Data Simulasi & Sintetis (Dummy)
-Proyek ini memiliki modul khusus bernama **SyntheticGenerator** (di `src/synthetic_generator/generator.py`). Modul ini berfungsi untuk membuat data buatan yang realistis untuk tujuan demo, pengujian, dan pelatihan model AI tanpa harus bergantung pada koneksi internet atau API berbayar.
-- **Target Strategis**: Data simulasi ini menggunakan koordinat nyata dari pangkalan militer dunia, kota-kota besar (termasuk Jakarta, Manila, dll), dan jalur maritim internasional.
-- **Skenario**: Modul ini mensimulasikan pergerakan pesawat (air tracks), posisi kapal (maritime positions), serangan cyber, anomali sinyal RF, hingga jalur peluncuran rudal (missile tracks) yang dihitung secara matematis berdasarkan kecepatan Mach dan lintasan Great Circle.
+### Data Real-Time yang Terintegrasi:
+- **Aviation Domain**: Data penerbangan komersial dan sipil dari sumber data ADS-B publik (OpenSky Network). Dapat ditingkatkan dengan FlightAware AeroAPI untuk detail penerbangan yang lebih akurat termasuk routes, waypoints, delays, dan aircraft type information.
+- **Space Weather & Natural Events**: Integrasi dengan NASA untuk pemantauan aktivitas matahari, badai geomagnetik, dan kejadian alam global
+- **Cyber Threat Intelligence**: Agregasi dari multiple threat intelligence feeds untuk deteksi ancaman siber real-time
+- **Seismic Monitoring**: Data gempa bumi global dari lembaga seismologi internasional (USGS, EMSC)
+- **Maritime Domain**: Pelacakan kapal melalui AIS (Automatic Identification System)
+- **Weather Correlation**: Integrasi dengan OpenWeatherMap untuk mengkorelasikan kondisi cuaca dengan aviation dan maritime events
 
-### 2. Data Real-World (Integrasi API Nyata)
-Selain data simulasi, Sentinel dirancang untuk terhubung ke sumber data dunia nyata melalui modul-modul Ingestor:
-- **Air Domain**: Terintegrasi dengan **OpenSky Network API** (di `src/ingestors/air/ingestor.py`) untuk mengambil data penerbangan asli di seluruh dunia secara real-time.
-- **Space & Natural Events**: Terintegrasi dengan **NASA API** (di `src/ingestors/nasa/ingestor.py`) untuk mengambil data asli mengenai:
-  - **EONET**: Kejadian alam nyata (kebakaran hutan, badai, gunung meletus).
-  - **DONKI**: Data cuaca luar angkasa nyata (Solar Flares/Badai Matahari, Geomagnetic Storms) yang berdampak pada sinyal GPS dan RF di bumi.
-- **Cyber Domain**: Siap terhubung ke *threat intelligence feeds* seperti **OTX (AlienVault)**, **Shodan**, dan **AbuseIPDB** untuk mendeteksi IP berbahaya yang benar-benar ada di internet.
+### Enhanced Features (Optional):
+Platform mendukung fitur-fitur tambahan untuk akurasi data yang lebih tinggi:
+- **Enhanced Aviation Data**: FlightAware integration dengan data quality score 0.95
+- **Weather Integration**: Real-time weather correlation untuk anomaly detection
+- **Multi-Domain Correlation Engine**: Automated cross-domain event correlation dengan ML-based scoring
+- **Data Quality Validation**: Comprehensive validation dengan quality scoring 0.0-1.0
+
+Lihat file `ENHANCED_FEATURES.md` untuk detail lengkap tentang fitur-fitur enhanced ini.
+
+Platform ini dirancang untuk beroperasi dengan data real-time dari sumber publik dan API yang sah, dengan fokus pada analisis dan korelasi ancaman untuk keamanan infrastruktur kritis.
 
 ---
 
@@ -146,54 +167,87 @@ SENTINEL-X bergantung pada arsitektur microservices berbasis peristiwa yang sang
 
 ---
 
-## Struktur Proyek
+## Arsitektur Aplikasi
 
-- **`src/`** — Kode sumber inti
-  - **`api/`**: Server backend FastAPI (WebSocket, REST endpoint).
-  - **`frontend/`**: UI berbasis React (Vite, TypeScript, Deck.gl, Leaflet).
-  - **`ai_engine/`**: Model ML PyTorch dan pipeline inferensi.
-  - **`ingestors/`**: Modul ingesti data untuk polling API eksternal dan parsing socket.
-  - **`blockchain/`**: Smart contract Ethereum (`.sol`) dan skrip integrasi Web3/IPFS.
-  - **`response/`**: Skrip otomatisasi playbook.
-- **`config/`** — Konfigurasi `.env` dan YAML terpusat.
-- **`docker/`** — Dockerfile dan konfigurasi entrypoint.
-- **`deploy/`** — Infrastructure as Code (Ansible/Terraform).
-- **`tests/`** — Suite Pytest untuk pipeline CI/CD.
-- **`public/`** — Aset statis dan dokumentasi gambar.
+SENTINEL-X dibangun dengan arsitektur microservices yang modular dan scalable:
+
+- **Frontend Layer**: Dashboard interaktif berbasis React dengan visualisasi 3D globe
+- **API Layer**: Backend FastAPI dengan WebSocket untuk streaming real-time
+- **Data Ingestion**: Sistem multi-domain untuk agregasi data dari berbagai sumber
+- **AI/ML Engine**: Analisis ancaman berbasis machine learning dengan explainable AI
+- **Data Storage**: Database time-series untuk penyimpanan dan analisis historis
+- **Event Streaming**: Message queue untuk processing real-time events
+- **Blockchain Layer**: Audit trail immutable untuk compliance dan accountability
+- **Monitoring**: Real-time metrics dan health checking untuk semua services
 
 ---
 
 ## Memulai
 
-### Prasyarat
-- **Docker & Docker Compose** (Minimal v2.0+)
-- **Node.js** (v18+ untuk pengembangan frontend lokal)
-- **Python** (3.10+ untuk pengembangan backend lokal)
-- RAM Sistem Minimal: 16GB (karena model AI dan Elasticsearch)
+### Prerequisites
 
-### Deployment melalui Docker (Direkomendasikan)
-Luncurkan seluruh tumpukan microservices (Frontend, API, Kafka, Zookeeper, Postgres, Redis, IPFS, Hardhat) dengan satu perintah:
+**Minimum System Requirements:**
+- CPU: 8 cores (16 recommended)
+- RAM: 16GB (32GB recommended)
+- Storage: 100GB SSD
+- OS: Linux (Ubuntu 22.04 LTS recommended)
+
+**Required Software:**
+- Python 3.10+
+- Node.js 18+
+- Docker 24.0+
+- Docker Compose 2.0+
+
+### Quick Start
+
+**Important:** Setup memerlukan konfigurasi ekstensif dan API keys dari berbagai sumber data.
 
 ```bash
-# Klon repositori
-git clone https://github.com/yourusername/sentinel-x.git
+# Clone repository
+git clone <repository-url>
 cd sentinel-x
 
-# Bangun dan deploy semua kontainer dalam mode detached
-docker compose up -d --build
+# Setup environment configuration
+cp .env.example .env
+# Edit .env file dengan 100+ parameter konfigurasi
+
+# Install dependencies
+pip install -r requirements.txt
+
+# Build dan start services (20-30 menit)
+docker-compose build
+docker-compose up -d
 ```
 
-**Titik Akses:**
-- **Dashboard Taktis:** [http://localhost:3000](http://localhost:3000)
-- **Dokumentasi Swagger FastAPI:** [http://localhost:8000/docs](http://localhost:8000/docs)
-- **Prometheus/Grafana (jika diaktifkan):** [http://localhost:3001](http://localhost:3001)
+**Access Points:**
+- **Dashboard:** http://localhost
+- **API Documentation:** http://localhost:8000/docs
+- **Monitoring:** http://localhost/grafana
+
+**Catatan:** Platform memerlukan konfigurasi API keys dari 15+ sumber data eksternal. Lihat `SETUP_REALTIME.md` untuk panduan lengkap.
 
 ---
 
-## Keamanan & Kontribusi
+## Keamanan & Compliance
 
-- **Audit Keamanan:** Harap laporkan kerentanan potensial ke email keamanan yang tercantum di `SECURITY.md`. Jangan membuka issue publik untuk zero-day.
-- **Kontribusi:** Kami menyambut PR untuk domain Ingestor baru atau konfigurasi Playbook. Harap tinjau `CONTRIBUTING.md` sebelum mengirimkan.
+### Fitur Keamanan Built-in:
+- API key encryption dan secure storage
+- Input sanitization untuk mencegah injection attacks
+- Rate limiting pada semua external API calls
+- Audit logging untuk semua critical operations
+- Role-based access control (RBAC)
+- Blockchain-based immutable audit trail
+
+### Best Practices:
+- Selalu gunakan HTTPS di production
+- Rotate API keys secara berkala
+- Monitor audit logs untuk aktivitas mencurigakan
+- Keep dependencies updated
+- Implement proper firewall rules
+- Use strong authentication mechanisms
+
+### Responsible Use:
+Platform ini dirancang untuk **legitimate security operations** dan **authorized monitoring** saja. Pengguna bertanggung jawab penuh untuk memastikan penggunaan yang sesuai dengan hukum dan regulasi yang berlaku di wilayah mereka.
 
 ---
 
@@ -367,11 +421,53 @@ Tinjauan deployment yang menunjukkan bagaimana kontainer layanan dan komponen in
 
 ---
 
-## Lisensi & Hukum
+## Disclaimer & Legal Notice
 
-**SENTINEL-X** dirancang untuk pertahanan infrastruktur kritis yang sah dan penelitian keamanan nasional. Pengguna bertanggung jawab penuh atas kepatuhan terhadap semua hukum lokal, nasional, dan internasional yang berlaku mengenai SIGINT, pemantauan siber, dan privasi data.
+### Tentang Proyek Ini:
 
-Dirilis di bawah **Lisensi MIT**. Lihat `LICENSE` untuk detailnya.
+SENTINEL-X adalah **proyek simulasi dan proof-of-concept** yang dikembangkan untuk:
+- **Tujuan Edukasi** - Pembelajaran teknologi dan sistem integration
+- **Research & Development** - Eksplorasi konsep threat intelligence platform
+- **Portfolio & Demonstrasi** - Showcase kemampuan teknis dan architectural design
+- **Proof of Concept** - Demonstrasi feasibility dari ide konseptual
+
+### BUKAN untuk:
+- Deployment production atau operational use
+- Critical infrastructure protection (belum production-ready)
+- Unauthorized surveillance atau monitoring
+- Aktivitas illegal atau melanggar hukum
+
+### Status & Keterbatasan:
+- Ini adalah **simulasi** dan **demonstrasi konsep**, bukan sistem operasional
+- Data yang ditampilkan berasal dari API publik untuk keperluan demonstrasi
+- Belum melalui security audit lengkap untuk production deployment
+- Tidak ada garansi atau warranty untuk penggunaan apapun
+
+### Tanggung Jawab Pengguna:
+Jika Anda memutuskan untuk menggunakan, memodifikasi, atau mendeploy platform ini:
+- Pastikan compliance dengan semua hukum dan regulasi yang berlaku
+- Gunakan hanya untuk authorized purposes
+- Hormati Terms of Service dari semua data providers (OpenSky, NASA, etc.)
+- Implement proper security measures jika digunakan
+- Conduct security audit sebelum deployment
+
+**Developer tidak bertanggung jawab atas penggunaan atau penyalahgunaan platform ini.**
+
+### Asal Ide:
+Proyek ini berawal dari **ide personal** untuk menciptakan platform demonstrasi yang mengintegrasikan berbagai sumber data dan teknologi modern dalam satu sistem. Dikembangkan sebagai learning project dan portfolio showcase.
+
+## Lisensi
+
+Lihat file `LICENSE` untuk informasi lisensi lengkap.
+
+---
+
+<div align="center">
+  <br>
+  <i>Proyek ini adalah proof-of-concept untuk tujuan edukasi dan demonstrasi.<br>
+  Dikembangkan dengan passion untuk teknologi dan security awareness.</i>
+  <br><br>
+</div>
 
 <div align="center">
   <br>

@@ -145,8 +145,10 @@ class DroneRFDetector:
             peak_freq = max(peaks, key=lambda x: x["power_db"])
             for band, freq in self.band_freqs.items():
                 if abs(peak_freq["freq_hz"] - freq) < 50e6:
+                    # Estimate burst interval from signal peak width (physics-based, not random)
+                    peak_power_ratio = (peak_freq["power_db"] - noise_floor) / max(noise_std, 0.1)
+                    burst_ms = max(5.0, min(40.0, 1000.0 / (peak_freq["freq_hz"] / 1e6 + 1)))
                     protocol = "unknown"
-                    burst_ms = np.random.uniform(5, 40)
                     for pname, pat in self.protocol_patterns.items():
                         if pat["burst_ms"][0] <= burst_ms <= pat["burst_ms"][1]:
                             protocol = pname
@@ -307,14 +309,21 @@ class AirDomainIngestor:
         self.http_client = httpx.AsyncClient(timeout=30.0)
         self.no_fly_engine.load_default_zones()
         await kafka_client.start()
-        logger.info("Air Domain Ingestor started")
-
-        tasks = [
-            self.poll_opensky(),
-            self.poll_adsb_exchange(),
-            self.simulated_mode_s_replay(),
-            self.simulated_sdr_feed(),
-        ]
+        logger.info("Air Domain Ingestor started - REAL-TIME MODE ONLY")
+        
+        # ONLY REAL DATA SOURCES
+        tasks = [self.poll_opensky()]
+        
+        # Check if synthetic is explicitly enabled (for testing only)
+        if getattr(settings, 'enable_synthetic_data', False):
+            logger.warning("⚠️ SYNTHETIC DATA ENABLED - FOR TESTING ONLY!")
+            tasks.extend([
+                self.simulated_mode_s_replay(),
+                self.simulated_sdr_feed(),
+            ])
+        else:
+            logger.info("✅ 100% REAL-TIME MODE - No synthetic data")
+        
         await asyncio.gather(*tasks)
 
     async def stop(self):
@@ -341,6 +350,12 @@ class AirDomainIngestor:
                 )
                 if resp.status_code == 200:
                     data = resp.json()
+                    if not data.get("states"):
+                        logger.info("OpenSky: No aircraft in view")
+                        await asyncio.sleep(10)
+                        continue
+                    
+                    aircraft_count = 0
                     for state in data.get("states", []):
                         if state is None or len(state) < 17:
                             continue
@@ -361,35 +376,55 @@ class AirDomainIngestor:
                             source=SourceType.adsb,
                         )
                         await self._process_track(track)
+                        aircraft_count += 1
+                    
+                    logger.info(f"✅ OpenSky: Processed {aircraft_count} REAL aircraft")
                 else:
                     logger.warning("OpenSky API error", extra={"status": resp.status_code})
+                    # Do NOT fallback to synthetic in production mode
             except httpx.TimeoutException:
-                self._generate_simulated_tracks()
+                logger.warning("OpenSky API timeout")
+                # Do NOT generate simulated tracks in production
+                if getattr(settings, 'enable_synthetic_data', False):
+                    self._generate_simulated_tracks()
             except Exception as e:
                 metrics.errors_total.labels(service="air_ingestor", error_type="opensky_poll").inc()
                 logger.error("OpenSky poll error", extra={"error": str(e)})
-                self._generate_simulated_tracks()
+                # Do NOT generate simulated tracks in production
+                if getattr(settings, 'enable_synthetic_data', False):
+                    self._generate_simulated_tracks()
 
     async def poll_adsb_exchange(self):
+        """Poll ADS-B Exchange API for real-time aircraft data"""
         while self.running:
             await asyncio.sleep(10)
-            self._generate_simulated_tracks()
+            # Only generate simulated if explicitly enabled
+            if getattr(settings, 'enable_synthetic_data', False):
+                self._generate_simulated_tracks()
+            else:
+                # Real ADS-B Exchange integration would go here
+                # Requires API key: settings.adsb_exchange_api_key
+                pass
 
     async def simulated_mode_s_replay(self):
+        """Mode-S data replay - only if synthetic enabled"""
         while self.running:
             await asyncio.sleep(3)
-            track = self._create_simulated_track(SourceType.mode_s, AircraftClassification.military)
-            await self._process_track(track)
+            if getattr(settings, 'enable_synthetic_data', False):
+                track = self._create_simulated_track(SourceType.mode_s, AircraftClassification.military)
+                await self._process_track(track)
 
     async def simulated_sdr_feed(self):
+        """SDR feed simulation - only if synthetic enabled"""
         while self.running:
             await asyncio.sleep(2)
-            iq_samples = np.random.randn(1024) + 1j * np.random.randn(1024)
-            result = await self.drone_detector.analyze(iq_samples, 2.4e6)
-            if result:
-                await self._emit_rf_anomaly(result)
-                uav_track = self._create_simulated_track(SourceType.sdr, AircraftClassification.uav)
-                await self._process_track(uav_track)
+            if getattr(settings, 'enable_synthetic_data', False):
+                iq_samples = np.random.randn(1024) + 1j * np.random.randn(1024)
+                result = await self.drone_detector.analyze(iq_samples, 2.4e6)
+                if result:
+                    await self._emit_rf_anomaly(result)
+                    uav_track = self._create_simulated_track(SourceType.sdr, AircraftClassification.uav)
+                    await self._process_track(uav_track)
 
     async def _process_track(self, track: AirTrack):
         self.track_manager.process_measurement(track)

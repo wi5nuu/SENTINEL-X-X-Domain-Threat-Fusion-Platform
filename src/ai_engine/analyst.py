@@ -1,106 +1,172 @@
+"""
+Sentinel Tactical Analyst
+Context-aware AI analyst built from real-time sensor data.
+Uses actual alert/track history to generate situational summaries.
+No mock responses - all output derived from real ingested data.
+"""
 import asyncio
 import json
 import logging
-import time
 from datetime import datetime, timedelta
-from typing import List, Optional, Dict
+from typing import List, Dict
 
-import numpy as np
-from src.common.models import Alert, AirTrack, VesselTrack, ThreatLevel
+from src.common.models import Alert, ThreatLevel
 
 logger = logging.getLogger("sentinel-analyst")
 
+
 class SentinelAnalyst:
     """
-    Tactical AI Analyst for Sentinel-X.
-    Uses RAG (Retrieval-Augmented Generation) to provide situational awareness
-    and answer operator queries based on real-time sensor data and alerts.
+    Tactical analyst that produces situational awareness from real data.
+    Queries are answered using actual alert and track history - no mocked strings.
     """
 
-    def __init__(self, model_name: str = "gpt2", use_mock: bool = True):
-        self.model_name = model_name
-        self.use_mock = use_mock
+    def __init__(self):
         self.alert_history: List[Alert] = []
         self.track_history: Dict[str, List] = {"air": [], "maritime": []}
-        self.max_history = 100
-        
-        if not self.use_mock:
-            try:
-                from transformers import pipeline
-                self.generator = pipeline("text-generation", model=model_name)
-                logger.info(f"Sentinel Analyst initialized with model: {model_name}")
-            except Exception as e:
-                logger.warning(f"Failed to load transformers model: {e}. Falling back to mock mode.")
-                self.use_mock = True
+        self.max_history = 200
 
     def add_alert(self, alert: Alert):
         self.alert_history.append(alert)
         if len(self.alert_history) > self.max_history:
             self.alert_history.pop(0)
 
-    def add_track(self, domain: str, track):
+    def add_track(self, domain: str, track: dict):
         if domain in self.track_history:
             self.track_history[domain].append(track)
             if len(self.track_history[domain]) > self.max_history:
                 self.track_history[domain].pop(0)
 
-    def _get_context(self) -> str:
-        """Constructs a text-based context from recent data."""
-        context = "TACTICAL CONTEXT:\n"
-        
-        # Recent Critical/Catastrophic Alerts
-        critical_alerts = [a for a in self.alert_history if a.threat_class in [ThreatLevel.critical, ThreatLevel.catastrophic]][-5:]
-        if critical_alerts:
-            context += "CRITICAL ALERTS:\n"
-            for a in critical_alerts:
-                context += f"- [{a.timestamp_utc.isoformat()}] {a.domain}: {a.description} (Conf: {a.confidence})\n"
-        
-        # Threat Counts
-        threat_counts = {}
-        for a in self.alert_history:
-            threat_counts[a.threat_class.value] = threat_counts.get(a.threat_class.value, 0) + 1
-        
-        context += f"CURRENT THREAT PROFILE: {json.dumps(threat_counts)}\n"
-        
-        # Recent Tracks
-        air_count = len(self.track_history["air"])
-        maritime_count = len(self.track_history["maritime"])
-        context += f"ACTIVE TRACKS: {air_count} Air, {maritime_count} Maritime\n"
-        
-        return context
+    def _build_context(self) -> dict:
+        """Build structured context from real ingested data."""
+        now = datetime.utcnow()
+        window_15m = now - timedelta(minutes=15)
+        window_1h = now - timedelta(hours=1)
+
+        recent_alerts = [
+            a for a in self.alert_history
+            if hasattr(a, 'timestamp_utc') and a.timestamp_utc >= window_1h
+        ]
+
+        threat_counts: dict = {}
+        for a in recent_alerts:
+            key = a.threat_class.value if hasattr(a.threat_class, 'value') else str(a.threat_class)
+            threat_counts[key] = threat_counts.get(key, 0) + 1
+
+        domain_counts: dict = {}
+        for a in recent_alerts:
+            domain_counts[a.domain] = domain_counts.get(a.domain, 0) + 1
+
+        critical = [
+            a for a in recent_alerts
+            if a.threat_class in (ThreatLevel.critical, ThreatLevel.catastrophic)
+        ]
+
+        threat_flags_seen: list = []
+        for a in recent_alerts:
+            flags = getattr(a, 'threat_flags', []) or []
+            threat_flags_seen.extend(flags)
+
+        air_tracks = self.track_history.get("air", [])
+        maritime_tracks = self.track_history.get("maritime", [])
+
+        threat_aircraft = [
+            t for t in air_tracks
+            if t.get("is_threat") or t.get("squawk") in ("7500", "7600", "7700")
+        ]
+
+        dark_vessels = [
+            t for t in maritime_tracks
+            if t.get("dark_vessel_suspect")
+        ]
+
+        return {
+            "total_alerts_1h": len(recent_alerts),
+            "threat_counts": threat_counts,
+            "domain_counts": domain_counts,
+            "critical_alerts": [
+                {
+                    "domain": a.domain,
+                    "description": a.description,
+                    "confidence": a.confidence,
+                    "timestamp": a.timestamp_utc.isoformat() if hasattr(a.timestamp_utc, 'isoformat') else str(a.timestamp_utc),
+                }
+                for a in critical[-5:]
+            ],
+            "active_air_tracks": len(air_tracks),
+            "active_maritime_tracks": len(maritime_tracks),
+            "threat_aircraft_count": len(threat_aircraft),
+            "dark_vessel_count": len(dark_vessels),
+            "dominant_threat_flags": list(set(threat_flags_seen))[:10],
+            "timestamp": now.isoformat(),
+        }
 
     async def query(self, user_query: str) -> str:
-        """Answers a user query using tactical context."""
-        context = self._get_context()
-        prompt = f"{context}\nOPERATOR QUERY: {user_query}\nANALYST RESPONSE:"
-        
-        if self.use_mock:
-            await asyncio.sleep(0.5) # Simulate thinking
-            return self._generate_mock_response(user_query)
-        
-        try:
-            result = self.generator(prompt, max_new_tokens=100, num_return_sequences=1)
-            response = result[0]['generated_text'].replace(prompt, "").strip()
-            return response
-        except Exception as e:
-            logger.error(f"Inference error: {e}")
-            return "ERROR: Tactical inference engine failed. Reverting to manual protocol."
+        """Answer operator query using real sensor context."""
+        ctx = self._build_context()
+        q = user_query.lower()
 
-    def _generate_mock_response(self, query: str) -> str:
-        """Generates realistic mock responses for tactical scenarios."""
-        q = query.lower()
-        if "status" in q or "situation" in q:
-            crit_count = len([a for a in self.alert_history if a.threat_class in [ThreatLevel.critical, ThreatLevel.catastrophic]])
-            return f"Currently monitoring {len(self.alert_history)} active alerts. There are {crit_count} critical threats requiring immediate attention. Airspace and maritime sectors are active with {len(self.track_history['air'])} and {len(self.track_history['maritime'])} tracks respectively."
-        if "missile" in q or "threat" in q:
-            return "Analyzing threat trajectories. Several high-velocity tracks detected in Sector-7. Recommend activating layered ABM defense and notifying regional command."
+        # Build response from real data context
+        parts = []
+
+        if "status" in q or "situation" in q or "summary" in q or "aware" in q:
+            parts.append(
+                f"As of {ctx['timestamp'][:19]}Z: {ctx['total_alerts_1h']} alerts in last 60 minutes. "
+                f"Threat breakdown: {json.dumps(ctx['threat_counts'])}. "
+                f"Active tracks: {ctx['active_air_tracks']} air, {ctx['active_maritime_tracks']} maritime."
+            )
+            if ctx['critical_alerts']:
+                parts.append(
+                    f"Critical alerts: " +
+                    " | ".join(
+                        f"[{a['domain'].upper()}] {a['description'][:80]} (conf:{a['confidence']:.0%})"
+                        for a in ctx['critical_alerts']
+                    )
+                )
+            else:
+                parts.append("No critical alerts currently active.")
+
+        if "air" in q or "aircraft" in q or "flight" in q:
+            parts.append(
+                f"Air domain: {ctx['active_air_tracks']} tracks monitored. "
+                f"{ctx['threat_aircraft_count']} aircraft with threat indicators or emergency squawk."
+            )
+
+        if "maritime" in q or "vessel" in q or "ship" in q:
+            parts.append(
+                f"Maritime domain: {ctx['active_maritime_tracks']} vessel tracks. "
+                f"{ctx['dark_vessel_count']} dark vessel suspects (AIS gap detected)."
+            )
+
         if "cyber" in q:
-            return "Cyber domain showing increased probing activity on ICS ports. Lateral movement not yet confirmed, but recommend air-gapping critical infrastructure."
-        
-        return "Tactical Analyst at your service. Context received. Please specify coordinates or domain for deeper analysis."
+            cyber_alerts = ctx['domain_counts'].get('cyber', 0)
+            parts.append(
+                f"Cyber domain: {cyber_alerts} events in the last hour from threat intelligence feeds."
+            )
+
+        if "seismic" in q or "earthquake" in q:
+            seismic_alerts = ctx['domain_counts'].get('seismic', 0)
+            parts.append(f"Seismic domain: {seismic_alerts} events recorded in the last hour.")
+
+        if "threat" in q and not parts:
+            flags = ctx['dominant_threat_flags']
+            if flags:
+                parts.append(f"Dominant threat indicators detected: {', '.join(flags)}.")
+            else:
+                parts.append("No elevated threat indicators in current window.")
+
+        if not parts:
+            parts.append(
+                f"Sentinel monitoring active. {ctx['total_alerts_1h']} events in last hour across "
+                f"{len(ctx['domain_counts'])} domains. "
+                f"Specify a domain or threat type for detailed analysis."
+            )
+
+        return " ".join(parts)
 
     async def get_situational_awareness(self) -> str:
-        """Generates a high-level situational awareness summary."""
-        return await self.query("Provide a situational awareness summary of the last 15 minutes.")
+        """High-level situational awareness from real data."""
+        return await self.query("situation status summary")
+
 
 analyst = SentinelAnalyst()

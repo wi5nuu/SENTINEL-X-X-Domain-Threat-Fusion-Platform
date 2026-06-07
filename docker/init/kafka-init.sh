@@ -4,7 +4,7 @@ set -e
 echo "Waiting for Kafka to be ready..."
 sleep 10
 
-TOPICS="air-tracks maritime-positions seismic-events rf-signals cyber-events alerts response-commands dead-letter-queue"
+TOPICS="air-tracks maritime-positions seismic-events rf-signals cyber-events alerts response-commands dead-letter-queue enhanced-air-tracks weather-data weather-alerts airport-conditions correlated-alerts"
 
 for TOPIC in $TOPICS; do
   kafka-topics --bootstrap-server kafka:9092 \
