@@ -89,6 +89,25 @@ Seamlessly aggregates and normalizes raw intelligence from 6 key domains via hig
 
 ---
 
+## Data Sources & Simulation
+
+SENTINEL-X beroperasi dengan pendekatan hibrida (hybrid), menggabungkan simulasi taktis tingkat tinggi dengan integrasi data dunia nyata:
+
+### 1. Data Simulasi & Sintetis (Dummy)
+Proyek ini memiliki modul khusus bernama **SyntheticGenerator** (di `src/synthetic_generator/generator.py`). Modul ini berfungsi untuk membuat data buatan yang realistis untuk tujuan demo, pengujian, dan pelatihan model AI tanpa harus bergantung pada koneksi internet atau API berbayar.
+- **Target Strategis**: Data simulasi ini menggunakan koordinat nyata dari pangkalan militer dunia, kota-kota besar (termasuk Jakarta, Manila, dll), dan jalur maritim internasional.
+- **Skenario**: Modul ini mensimulasikan pergerakan pesawat (air tracks), posisi kapal (maritime positions), serangan cyber, anomali sinyal RF, hingga jalur peluncuran rudal (missile tracks) yang dihitung secara matematis berdasarkan kecepatan Mach dan lintasan Great Circle.
+
+### 2. Data Real-World (Integrasi API Nyata)
+Selain data simulasi, Sentinel dirancang untuk terhubung ke sumber data dunia nyata melalui modul-modul Ingestor:
+- **Air Domain**: Terintegrasi dengan **OpenSky Network API** (di `src/ingestors/air/ingestor.py`) untuk mengambil data penerbangan asli di seluruh dunia secara real-time.
+- **Space & Natural Events**: Terintegrasi dengan **NASA API** (di `src/ingestors/nasa/ingestor.py`) untuk mengambil data asli mengenai:
+  - **EONET**: Kejadian alam nyata (kebakaran hutan, badai, gunung meletus).
+  - **DONKI**: Data cuaca luar angkasa nyata (Solar Flares/Badai Matahari, Geomagnetic Storms) yang berdampak pada sinyal GPS dan RF di bumi.
+- **Cyber Domain**: Siap terhubung ke *threat intelligence feeds* seperti **OTX (AlienVault)**, **Shodan**, dan **AbuseIPDB** untuk mendeteksi IP berbahaya yang benar-benar ada di internet.
+
+---
+
 ## System Architecture
 
 SENTINEL-X relies on a highly scalable, event-driven microservices architecture:
