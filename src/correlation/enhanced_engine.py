@@ -45,6 +45,16 @@ class EnhancedCorrelationEngine:
                 "domains": ["seismic", "cyber"],
                 "conditions": ["earthquake", "power_outage", "network_disruption"],
                 "score_multiplier": 1.7
+            },
+            "maritime_cyber_hijack": {
+                "domains": ["maritime", "cyber"],
+                "conditions": ["dark_vessel", "navigation_anomaly", "cyber_attack"],
+                "score_multiplier": 2.5
+            },
+            "aviation_gps_spoofing": {
+                "domains": ["air", "rf"],
+                "conditions": ["gps_anomaly", "signal_interference", "position_jump"],
+                "score_multiplier": 2.2
             }
         }
     
@@ -274,6 +284,16 @@ class EnhancedCorrelationEngine:
                 "Check critical infrastructure status",
                 "Monitor for secondary effects",
                 "Activate disaster response procedures"
+            ],
+            "maritime_cyber_hijack": [
+                "Alert coast guard of potential vessel hijack",
+                "Monitor for unexpected course changes",
+                "Initiate cyber forensics on vessel communications"
+            ],
+            "aviation_gps_spoofing": [
+                "Notify air traffic control of GPS anomalies",
+                "Advise pilots to use alternative navigation",
+                "Deploy SIGINT assets to locate interference source"
             ]
         }
         
