@@ -10,6 +10,7 @@ from src.ingestors.maritime.ingestor import MaritimeDomainIngestor
 from src.ingestors.seismic.ingestor import SeismicDomainIngestor
 from src.ingestors.rf.ingestor import RFIngestor
 from src.ingestors.cyber.ingestor import CyberDomainIngestor
+from src.ingestors.nasa.ingestor import NasaIngestor
 
 logger = setup_logging("ingestor-runner")
 
@@ -19,6 +20,7 @@ INGESTORS = {
     "seismic": SeismicDomainIngestor,
     "rf": RFIngestor,
     "cyber": CyberDomainIngestor,
+    "space": NasaIngestor,
 }
 
 
