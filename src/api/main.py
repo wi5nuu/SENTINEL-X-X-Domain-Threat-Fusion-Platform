@@ -190,7 +190,7 @@ async def lifespan(app: FastAPI):
 app = FastAPI(
     title="SENTINEL API",
     description="Global Multi-Domain Threat Detection & Response Platform",
-    version="1.0.0",
+    version="2.0.0",
     lifespan=lifespan,
 )
 
@@ -209,7 +209,7 @@ setup_telemetry(app, "sentinel-api")
 @app.get("/api/health")
 @app.get("/api/v1/health")
 async def health():
-    return {"status": "ok", "timestamp": datetime.utcnow().isoformat(), "version": "1.0.0", "ws_connections": ws_manager.active_count}
+    return {"status": "ok", "timestamp": datetime.utcnow().isoformat(), "version": "2.0.0", "ws_connections": ws_manager.active_count}
 
 
 @app.get("/metrics")
@@ -246,6 +246,8 @@ async def get_dashboard():
         "sdr": domain_counts.get("rf", 0) > 0,
         "honeypot": domain_counts.get("cyber", 0) > 0,
         "otx": domain_counts.get("cyber", 0) > 0,
+        "nasa_donki": domain_counts.get("space", 0) > 0,
+        "nasa_eonet": domain_counts.get("space", 0) > 0,
     }
 
     # Blockchain real sync status - check Ethereum node connectivity
