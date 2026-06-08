@@ -8,6 +8,18 @@ Dokumen ini menjelaskan fitur-fitur terbaru yang ditambahkan untuk meningkatkan 
 
 ## New Features
 
+### 0. New in v2.0.0: Global Situational Awareness & XAI
+
+**Status:** Production-Ready (v2.0.0)
+
+**Key Additions:**
+- **6th Domain: Space Weather**: Real-time monitoring of solar flares and geomagnetic storms via NASA DONKI/EONET APIs.
+- **Explainable AI (XAI)**: Reasoning chains for all critical alerts, explaining the "why" behind the detection.
+- **Advanced Multi-Domain Correlation**: New rules for detecting GPS spoofing and maritime hijacking attempts.
+- **Global 3D Globe**: Immersive visualization for tracking assets across continental boundaries.
+
+---
+
 ### 1. Enhanced Aviation Data (FlightAware Integration)
 
 **Status:** Optional (requires API key)
