@@ -2,9 +2,10 @@
   <img src="public/sentinelpagenondetect.webp" alt="Sentinel-X Logo" width="900">
   
   # SENTINEL-X
-  **Platform Inteligensi Ancaman & Fusion Multi-Domain - Proof of Concept**
+  **Platform Inteligensi Ancaman & Fusion Multi-Domain - v2.0.0**
 
   [![License](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
+  [![Version](https://img.shields.io/badge/Version-2.0.0-red.svg)](https://github.com/wi5nuu/SENTINEL-X/releases/tag/v2.0.0)
   [![React](https://img.shields.io/badge/Frontend-React%20%7C%20Deck.GL-61DAFB?logo=react&logoColor=black)](https://reactjs.org/)
   [![FastAPI](https://img.shields.io/badge/Backend-FastAPI-009688?logo=fastapi&logoColor=white)](https://fastapi.tiangolo.com/)
   [![PyTorch](https://img.shields.io/badge/AI_Engine-PyTorch-EE4C2C?logo=pytorch&logoColor=white)](https://pytorch.org/)
