@@ -3,6 +3,7 @@ Enhanced Correlation Engine
 Correlates data across multiple domains for better accuracy
 """
 import asyncio
+import uuid
 from datetime import datetime, timedelta
 from typing import List, Dict, Optional
 from collections import defaultdict

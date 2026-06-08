@@ -59,7 +59,7 @@ class ConfigValidator:
         
         if missing_vars:
             self.errors.append(f"Missing environment variables: {', '.join(missing_vars)}")
-            print(f"❌ ERROR: Missing required environment variables:")
+            print("❌ ERROR: Missing required environment variables:")
             for var in missing_vars:
                 print(f"   - {var}")
         else:
