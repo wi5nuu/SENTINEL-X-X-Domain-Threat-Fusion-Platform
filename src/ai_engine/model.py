@@ -117,6 +117,7 @@ class ThreatFusionModel(nn.Module):
         self.seismic_encoder = SeismicEncoder(embedding_dim=embedding_dim)
         self.rf_encoder = RFEncoder(embedding_dim=embedding_dim)
         self.cyber_encoder = CyberEncoder(embedding_dim=embedding_dim)
+        self.space_encoder = SpaceEncoder(embedding_dim=embedding_dim)
 
         self.temporal = TemporalTransformer(embedding_dim=embedding_dim)
 
@@ -143,7 +144,7 @@ class ThreatFusionModel(nn.Module):
             nn.Linear(32, 1),
         )
 
-    def forward(self, air_x=None, maritime_x=None, seismic_x=None, rf_x=None, cyber_x=None):
+    def forward(self, air_x=None, maritime_x=None, seismic_x=None, rf_x=None, cyber_x=None, space_x=None):
         embeddings = []
         if air_x is not None:
             embeddings.append(self.air_encoder(air_x))
@@ -155,6 +156,8 @@ class ThreatFusionModel(nn.Module):
             embeddings.append(self.rf_encoder(rf_x))
         if cyber_x is not None:
             embeddings.append(self.cyber_encoder(cyber_x))
+        if space_x is not None:
+            embeddings.append(self.space_encoder(space_x))
 
         if not embeddings:
             raise ValueError("At least one input stream required")
@@ -165,6 +168,11 @@ class ThreatFusionModel(nn.Module):
 
         return {
             "threat_class": self.threat_classifier(pooled),
+            "compound_threat": self.compound_threat_head(pooled),
+            "eta_minutes": self.eta_head(pooled),
+            "confidence": self.confidence_head(pooled),
+        }
+fier(pooled),
             "compound_threat": self.compound_threat_head(pooled),
             "eta_minutes": self.eta_head(pooled),
             "confidence": self.confidence_head(pooled),
