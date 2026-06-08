@@ -465,12 +465,12 @@ Lihat file `LICENSE` untuk informasi lisensi lengkap.
 
 <div align="center">
   <br>
-  <i>Proyek ini adalah proof-of-concept untuk tujuan edukasi dan demonstrasi.<br>
-  Dikembangkan dengan passion untuk teknologi dan security awareness.</i>
+  <i>Proyek ini adalah proof-of-concept v2.0.0 untuk tujuan edukasi dan demonstrasi.<br>
+  Dikembangkan dengan passion untuk teknologi dan situational awareness global.</i>
   <br><br>
 </div>
 
 <div align="center">
   <br>
-  <i>Dikembangkan dengan presisi dan mempertimbangkan keamanan.</i>
+  <i>SENTINEL-X: Precision in Chaos. Released v2.0.0.</i>
 </div>
