@@ -1,4 +1,4 @@
-import React, { useMemo, useEffect, useRef } from 'react';
+import React, { useMemo, useEffect, useRef, useState, useCallback } from 'react';
 import DeckGL from '@deck.gl/react';
 import { _GlobeView as GlobeView } from '@deck.gl/core';
 import { ArcLayer, ScatterplotLayer, TextLayer } from '@deck.gl/layers';
@@ -14,6 +14,18 @@ type Track = {
   altitude?: number;
 };
 
+/** A full pre-computed trajectory for a live animated missile */
+export type MissileTrail = {
+  id: string;
+  name: string;
+  missile_type: string;          // 'ballistic' | 'cruise' | 'HGV' etc.
+  color: [number, number, number];
+  /** Array of [lon, lat, alt_km] waypoints from launch to impact */
+  waypoints: [number, number, number][];
+  total_duration_s: number;      // total flight time in seconds
+  launched_at: number;           // Date.now() timestamp of simulated launch
+};
+
 /* ─── Global Military Bases Dataset ─────────────────────────────── */
 type MilitaryBase = {
   name: string; country: string; lat: number; lon: number;
@@ -21,99 +33,11 @@ type MilitaryBase = {
   weapons: string; size: number;
 };
 
-const MILITARY_BASES: MilitaryBase[] = [
-  // === USA ===
-  { name: 'Offutt AFB (STRATCOM)', country: 'USA', lat: 41.12, lon: -95.91, type: 'nuclear', weapons: 'B-2 Spirit, Minuteman III ICBM', size: 1.2 },
-  { name: 'Malmstrom AFB', country: 'USA', lat: 47.51, lon: -111.18, type: 'icbm', weapons: '150× Minuteman III ICBM', size: 1.1 },
-  { name: 'Warren AFB', country: 'USA', lat: 41.14, lon: -104.86, type: 'icbm', weapons: '150× Minuteman III ICBM', size: 1.1 },
-  { name: 'Minot AFB', country: 'USA', lat: 48.42, lon: -101.36, type: 'icbm', weapons: '150× Minuteman III, B-52H', size: 1.1 },
-  { name: 'Norfolk Naval Station', country: 'USA', lat: 36.94, lon: -76.31, type: 'naval', weapons: 'CVN-77 George H.W. Bush, Aegis Cruisers', size: 1.3 },
-  { name: 'Pearl Harbor-Hickam', country: 'USA', lat: 21.35, lon: -157.97, type: 'naval', weapons: 'CVN-74 John C. Stennis, SSN Subs', size: 1.2 },
-  { name: 'Langley AFB', country: 'USA', lat: 37.08, lon: -76.36, type: 'airforce', weapons: 'F-22 Raptor, F-35A', size: 1.0 },
-  { name: 'Nellis AFB', country: 'USA', lat: 36.24, lon: -115.03, type: 'airforce', weapons: 'F-35A, F-16, A-10, B-2', size: 1.0 },
-  { name: 'Guam (Andersen AFB)', country: 'USA', lat: 13.58, lon: 144.93, type: 'airforce', weapons: 'B-52H, B-1B Lancer, F-15', size: 1.1 },
-  { name: 'Diego Garcia', country: 'USA/UK', lat: -7.31, lon: 72.41, type: 'naval', weapons: 'B-2, B-52, Tomahawk, SSBN', size: 1.2 },
-  { name: 'Ramstein AB (Germany)', country: 'USA', lat: 49.44, lon: 7.60, type: 'airforce', weapons: 'F-35A, C-17, Nuclear B61 bombs', size: 1.0 },
-  { name: 'Fort Liberty (Bragg)', country: 'USA', lat: 35.14, lon: -78.99, type: 'army', weapons: 'M1A2 Abrams, M109 Paladin, Delta Force', size: 1.0 },
-  { name: 'Camp Humphreys', country: 'USA', lat: 36.96, lon: 127.03, type: 'army', weapons: 'THAAD, Patriot PAC-3, Apache', size: 1.1 },
-  { name: 'Kadena AB (Japan)', country: 'USA', lat: 26.36, lon: 127.77, type: 'airforce', weapons: 'F-15C/D, RC-135, P-8 Poseidon', size: 1.1 },
-
-  // === RUSSIA ===
-  { name: 'Plesetsk Cosmodrome', country: 'RUS', lat: 62.96, lon: 40.69, type: 'icbm', weapons: 'RS-28 Sarmat, Angara Rocket', size: 1.3 },
-  { name: 'Dombarovsky (60th Missile Army)', country: 'RUS', lat: 50.73, lon: 59.51, type: 'icbm', weapons: 'RS-18 Stiletto, RS-20 Voevoda', size: 1.2 },
-  { name: 'Kozelsk (13th Missile Division)', country: 'RUS', lat: 54.04, lon: 35.78, type: 'icbm', weapons: 'RS-12M2 Topol-M', size: 1.1 },
-  { name: 'Severomorsk (Northern Fleet HQ)', country: 'RUS', lat: 69.07, lon: 33.42, type: 'naval', weapons: 'Admiral Kuznetsov CVN, Oscar-II SSGN, Typhoon SSBN', size: 1.3 },
-  { name: 'Vladivostok (Pacific Fleet)', country: 'RUS', lat: 43.11, lon: 131.88, type: 'naval', weapons: 'Slava-class cruiser, Kilo-class submarines', size: 1.1 },
-  { name: 'Khmeimim AB (Syria)', country: 'RUS', lat: 35.40, lon: 35.95, type: 'airforce', weapons: 'Su-57, Su-35S, Tu-22M3, S-400', size: 1.2 },
-  { name: 'Mozdok AB', country: 'RUS', lat: 43.78, lon: 44.60, type: 'airforce', weapons: 'Tu-95MS Bear, Tu-160 Blackjack', size: 1.1 },
-  { name: 'Engels-2 AB', country: 'RUS', lat: 51.43, lon: 46.28, type: 'nuclear', weapons: 'Tu-160M2 Blackjack, Tu-95MS ALCM', size: 1.2 },
-  { name: 'Armavir Radar (EW)', country: 'RUS', lat: 44.97, lon: 41.12, type: 'missile', weapons: 'Voronezh-DM BMEWS Radar', size: 0.9 },
-
-  // === CHINA ===
-  { name: 'Jilantai ICBM Base', country: 'CHN', lat: 39.38, lon: 105.72, type: 'icbm', weapons: 'DF-5B, DF-41 ICBM (300+ silos)', size: 1.3 },
-  { name: 'Yumen ICBM Silo Field', country: 'CHN', lat: 40.13, lon: 97.36, type: 'icbm', weapons: 'DF-41 Mobile ICBM', size: 1.3 },
-  { name: 'Hainan Island Naval Base', country: 'CHN', lat: 18.23, lon: 109.56, type: 'naval', weapons: 'Type 055 Destroyer, Type 094 SSBN, DF-21D ASBM', size: 1.3 },
-  { name: 'Yulin Naval Base (SSN)', country: 'CHN', lat: 18.16, lon: 109.53, type: 'naval', weapons: 'Jin-class SSBN (JL-3 SLBM), Shang-class SSN', size: 1.2 },
-  { name: 'Djibouti Naval Base', country: 'CHN', lat: 11.55, lon: 43.15, type: 'naval', weapons: 'Type 052D Destroyer, PLAN Marines', size: 1.0 },
-  { name: 'Lhasa (Tibet) AB', country: 'CHN', lat: 29.69, lon: 91.13, type: 'airforce', weapons: 'J-20 Stealth, J-16, H-6K Bomber', size: 1.1 },
-  { name: 'Subi Reef (SCS)', country: 'CHN', lat: 10.93, lon: 114.08, type: 'missile', weapons: 'YJ-12B ASBM, HQ-9 SAM, J-10', size: 1.1 },
-  { name: 'Mischief Reef (SCS)', country: 'CHN', lat: 9.91, lon: 115.54, type: 'missile', weapons: 'YJ-12B, HQ-9, Radar Arrays', size: 1.0 },
-  { name: 'Fiery Cross Reef (SCS)', country: 'CHN', lat: 9.55, lon: 112.89, type: 'airforce', weapons: 'J-11, J-10C, H-6 Bomber', size: 1.1 },
-
-  // === NORTH KOREA ===
-  { name: 'Sohae Launch Site', country: 'PRK', lat: 39.66, lon: 124.70, type: 'icbm', weapons: 'Hwasong-17 ICBM, Paektusan-1 rocket', size: 1.2 },
-  { name: 'Punggye-ri Nuclear Test Site', country: 'PRK', lat: 41.27, lon: 129.08, type: 'nuclear', weapons: 'Underground Nuclear Test Facility', size: 1.1 },
-  { name: 'Yangdok Missile Base', country: 'PRK', lat: 39.25, lon: 126.63, type: 'missile', weapons: 'Hwasong-15, KN-23 SRBM', size: 1.0 },
-  { name: 'Sinpo Naval Base', country: 'PRK', lat: 40.02, lon: 128.19, type: 'naval', weapons: 'Gorae-class SSBS (SLBM-capable)', size: 1.0 },
-
-  // === INDIA ===
-  { name: 'Kalaikunda AB (Su-30MKI)', country: 'IND', lat: 22.35, lon: 87.20, type: 'airforce', weapons: 'Su-30MKI, Brahmos cruise missile', size: 1.0 },
-  { name: 'INS Kadamba (Karwar)', country: 'IND', lat: 14.80, lon: 74.07, type: 'naval', weapons: 'INS Vikrant CVN, Arihant SSBN (K-15)', size: 1.2 },
-  { name: 'Wheeler Island (APJ Abdul Kalam)', country: 'IND', lat: 20.74, lon: 87.09, type: 'missile', weapons: 'Agni-V ICBM, K-4 SLBM', size: 1.1 },
-
-  // === PAKISTAN ===
-  { name: 'Sargodha Air Base', country: 'PAK', lat: 32.05, lon: 72.67, type: 'nuclear', weapons: 'F-16, Shaheen-III MRBM (nuclear-capable)', size: 1.0 },
-  { name: 'Masroor AB (Karachi)', country: 'PAK', lat: 24.90, lon: 66.94, type: 'airforce', weapons: 'F-16C/D Block 52, JF-17 Thunder', size: 1.0 },
-
-  // === UK ===
-  { name: 'Faslane (HMNB Clyde)', country: 'GBR', lat: 56.06, lon: -4.82, type: 'naval', weapons: 'Vanguard SSBN (Trident II D5), Astute SSN', size: 1.2 },
-  { name: 'RAF Marham', country: 'GBR', lat: 52.65, lon: 0.55, type: 'airforce', weapons: 'F-35B Lightning II, Typhoon', size: 1.0 },
-
-  // === FRANCE ===
-  { name: 'Île Longue (MSBS)', country: 'FRA', lat: 48.31, lon: -4.42, type: 'nuclear', weapons: 'Le Triomphant SSBN (M51 SLBM)', size: 1.2 },
-  { name: 'Saint-Dizier AB', country: 'FRA', lat: 48.64, lon: 5.00, type: 'nuclear', weapons: 'Rafale F3R (ASMP-A nuclear missile)', size: 1.0 },
-
-  // === ISRAEL ===
-  { name: 'Sdot Micha (Jericho)', country: 'ISR', lat: 31.73, lon: 34.87, type: 'icbm', weapons: 'Jericho III ICBM (assumed nuclear)', size: 1.1 },
-  { name: 'Nevatim AB', country: 'ISR', lat: 31.20, lon: 35.01, type: 'airforce', weapons: 'F-35I Adir, F-15I Ra\'am', size: 1.0 },
-
-  // === IRAN ===
-  { name: 'Imam Ali Missile Base', country: 'IRN', lat: 34.05, lon: 48.35, type: 'missile', weapons: 'Shahab-3, Sejjil-2 MRBM (2000km)', size: 1.1 },
-  { name: 'Shahrud Space Center', country: 'IRN', lat: 36.20, lon: 57.00, type: 'missile', weapons: 'Qadr MRBM, Safir/Simorgh rockets', size: 1.0 },
-
-  // === SAUDI ARABIA ===
-  { name: 'Prince Sultan AB', country: 'SAU', lat: 24.06, lon: 47.58, type: 'airforce', weapons: 'F-15SA Eagle, Typhoon, Patriot PAC-3', size: 1.0 },
-  { name: 'Al-Watah MRBM Base', country: 'SAU', lat: 21.88, lon: 46.08, type: 'missile', weapons: 'DF-3A, DF-21 MRBM (from China)', size: 1.0 },
-
-  // === TURKEY ===
-  { name: 'Incirlik AB', country: 'TUR', lat: 37.00, lon: 35.43, type: 'nuclear', weapons: 'B61-12 Nuclear bombs (NATO share), F-16', size: 1.1 },
-
-  // === JAPAN ===
-  { name: 'JASDF Chitose AB', country: 'JPN', lat: 42.79, lon: 141.67, type: 'airforce', weapons: 'F-35A, F-15J, E-767 AWACS', size: 1.0 },
-  { name: 'JMSDF Yokosuka', country: 'JPN', lat: 35.28, lon: 139.66, type: 'naval', weapons: 'JS Izumo (F-35B capable CVL), Aegis DDG', size: 1.1 },
-
-  // === SOUTH KOREA ===
-  { name: 'Osan AB', country: 'KOR', lat: 37.09, lon: 127.03, type: 'airforce', weapons: 'F-35A, A-10, THAAD', size: 1.0 },
-  { name: 'ROKN Jinhae Naval Base', country: 'KOR', lat: 35.14, lon: 128.64, type: 'naval', weapons: 'KSS-III SSBN (Hyunmoo-4 SLBM), Sejong DDG', size: 1.1 },
-
-  // === NATO ===
-  { name: 'Kleine Brogel AB (Belgium)', country: 'NATO', lat: 51.17, lon: 5.47, type: 'nuclear', weapons: 'B61-12 nuclear bombs (NATO), F-16AM', size: 0.9 },
-  { name: 'Aviano AB (Italy)', country: 'NATO', lat: 46.03, lon: 12.60, type: 'nuclear', weapons: 'B61-12 nuclear bombs (NATO), F-16', size: 0.9 },
-  { name: 'Büchel AB (Germany)', country: 'NATO', lat: 50.17, lon: 7.07, type: 'nuclear', weapons: 'B61-12 nuclear bombs (NATO), Tornado IDS', size: 0.9 },
-];
+// Military bases are now fetched dynamically from the backend API.
 
 interface Globe3DProps {
   tracks: Track[];
+  missileTrails?: MissileTrail[];
 }
 
 const INITIAL_VIEW_STATE = {
@@ -312,8 +236,77 @@ function SpaceBackground() {
 }
 
 /* ─── Main Globe3D ───────────────────────────────────────────────── */
-export default function Globe3D({ tracks }: Globe3DProps) {
-  const basesData = useMemo(() => MILITARY_BASES, []);
+export default function Globe3D({ tracks, missileTrails = [] }: Globe3DProps) {
+  const [basesData, setBasesData] = useState<MilitaryBase[]>([]);
+
+  useEffect(() => {
+    const fetchBases = async () => {
+      try {
+        const res = await fetch("http://localhost:8000/api/v1/missile/military-bases");
+        if (res.ok) {
+          const data = await res.json();
+          setBasesData(data.bases || []);
+        }
+      } catch (err) {
+        console.error("Failed to fetch military bases:", err);
+      }
+    };
+    fetchBases();
+  }, []);
+
+  // ── Animated missile trail state ──────────────────────────────────
+  // Each entry: { id, trailPts: [lon,lat,alt][], headPt: [lon,lat,alt], color }
+  type AnimState = {
+    id: string;
+    color: [number, number, number];
+    trail: { position: [number, number, number]; alpha: number }[];
+    head: [number, number, number] | null;
+    done: boolean;
+  };
+  const [animStates, setAnimStates] = useState<AnimState[]>([]);
+
+  // Tick: advance every 150ms
+  useEffect(() => {
+    if (missileTrails.length === 0) { setAnimStates([]); return; }
+
+    const TRAIL_LEN = 20; // how many historical waypoints to keep as "tail"
+
+    const tick = () => {
+      const now = Date.now();
+      setAnimStates(missileTrails.map(mt => {
+        const elapsed_s = (now - mt.launched_at) / 1000;
+        const progress = Math.min(1.0, elapsed_s / mt.total_duration_s);
+        const wpts = mt.waypoints;
+        if (wpts.length === 0) return { id: mt.id, color: mt.color, trail: [], head: null, done: true };
+
+        const headIdx = Math.min(wpts.length - 1, Math.floor(progress * (wpts.length - 1)));
+        const head = wpts[headIdx];
+
+        // Build fading trail from [headIdx-TRAIL_LEN .. headIdx]
+        const trailStart = Math.max(0, headIdx - TRAIL_LEN);
+        const trail = wpts.slice(trailStart, headIdx + 1).map((pt, i, arr) => ({
+          position: pt as [number, number, number],
+          alpha: Math.round(255 * ((i + 1) / arr.length) * 0.85),
+        }));
+
+        return { id: mt.id, color: mt.color, trail, head, done: progress >= 1.0 };
+      }));
+    };
+
+    tick();
+    const interval = setInterval(tick, 150);
+    return () => clearInterval(interval);
+  }, [missileTrails]);
+
+  // Flatten trail points and head points for DeckGL layers
+  const trailPoints = useMemo(() => animStates.flatMap(s =>
+    s.trail.map(p => ({ position: p.position, color: s.color, alpha: p.alpha }))
+  ), [animStates]);
+
+  const headPoints = useMemo(() => animStates
+    .filter(s => s.head && !s.done)
+    .map(s => ({ position: s.head!, color: s.color })),
+  [animStates]);
 
   const layers = useMemo(() => {
     return [
@@ -394,8 +387,36 @@ export default function Globe3D({ tracks }: Globe3DProps) {
         getWidth: 2.5,
         greatCircle: true,
       }),
+      /* Missile trail — fading segments */
+      new ScatterplotLayer({
+        id: 'missile-trail',
+        data: trailPoints,
+        getPosition: (d: any) => d.position,
+        getFillColor: (d: any) => [d.color[0], d.color[1], d.color[2], d.alpha],
+        getRadius: 35000,
+        radiusMinPixels: 1.5,
+        radiusMaxPixels: 5,
+        pickable: false,
+        parameters: { depthTest: false },
+      }),
+
+      /* Missile head — bright pulsing dot */
+      new ScatterplotLayer({
+        id: 'missile-heads',
+        data: headPoints,
+        getPosition: (d: any) => d.position,
+        getFillColor: (d: any) => [d.color[0], d.color[1], d.color[2], 255],
+        getLineColor: [255, 255, 255, 200],
+        stroked: true,
+        lineWidthMinPixels: 1,
+        getRadius: 100000,
+        radiusMinPixels: 5,
+        radiusMaxPixels: 16,
+        pickable: false,
+        parameters: { depthTest: false },
+      }),
     ];
-  }, [tracks, basesData]);
+  }, [tracks, basesData, trailPoints, headPoints]);
 
   const activeBases = basesData.length;
   const nuclearCount = basesData.filter(b => b.type === 'nuclear' || b.type === 'icbm').length;
@@ -460,6 +481,14 @@ export default function Globe3D({ tracks }: Globe3DProps) {
           <span style={{ color:'rgba(255,120,120,0.9)' }}>{nuclearCount} NUCLEAR SITES</span>
           <span style={{ color:'rgba(255,255,255,0.2)' }}>|</span>
           <span>{activeBases} MILITARY INSTALLATIONS</span>
+          {missileTrails.length > 0 && (
+            <>
+              <span style={{ color:'rgba(255,255,255,0.2)' }}>|</span>
+              <span style={{ color:'rgba(255,80,80,1)', animation:'pulse 1s infinite' }}>
+                🚀 {missileTrails.length} MISSILE{missileTrails.length > 1 ? 'S' : ''} IN FLIGHT
+              </span>
+            </>
+          )}
         </div>
       </div>
     </div>
