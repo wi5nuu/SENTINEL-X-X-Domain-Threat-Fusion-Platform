@@ -313,16 +313,7 @@ class AirDomainIngestor:
         
         # ONLY REAL DATA SOURCES
         tasks = [self.poll_opensky()]
-        
-        # Check if synthetic is explicitly enabled (for testing only)
-        if getattr(settings, 'enable_synthetic_data', False):
-            logger.warning("⚠️ SYNTHETIC DATA ENABLED - FOR TESTING ONLY!")
-            tasks.extend([
-                self.simulated_mode_s_replay(),
-                self.simulated_sdr_feed(),
-            ])
-        else:
-            logger.info("✅ 100% REAL-TIME MODE - No synthetic data")
+        logger.info("✅ 100% REAL-TIME MODE - No synthetic data")
         
         await asyncio.gather(*tasks)
 
@@ -381,50 +372,19 @@ class AirDomainIngestor:
                     logger.info(f"✅ OpenSky: Processed {aircraft_count} REAL aircraft")
                 else:
                     logger.warning("OpenSky API error", extra={"status": resp.status_code})
-                    # Do NOT fallback to synthetic in production mode
             except httpx.TimeoutException:
                 logger.warning("OpenSky API timeout")
-                # Do NOT generate simulated tracks in production
-                if getattr(settings, 'enable_synthetic_data', False):
-                    self._generate_simulated_tracks()
             except Exception as e:
                 metrics.errors_total.labels(service="air_ingestor", error_type="opensky_poll").inc()
                 logger.error("OpenSky poll error", extra={"error": str(e)})
-                # Do NOT generate simulated tracks in production
-                if getattr(settings, 'enable_synthetic_data', False):
-                    self._generate_simulated_tracks()
 
     async def poll_adsb_exchange(self):
         """Poll ADS-B Exchange API for real-time aircraft data"""
         while self.running:
             await asyncio.sleep(10)
-            # Only generate simulated if explicitly enabled
-            if getattr(settings, 'enable_synthetic_data', False):
-                self._generate_simulated_tracks()
-            else:
-                # Real ADS-B Exchange integration would go here
-                # Requires API key: settings.adsb_exchange_api_key
-                pass
-
-    async def simulated_mode_s_replay(self):
-        """Mode-S data replay - only if synthetic enabled"""
-        while self.running:
-            await asyncio.sleep(3)
-            if getattr(settings, 'enable_synthetic_data', False):
-                track = self._create_simulated_track(SourceType.mode_s, AircraftClassification.military)
-                await self._process_track(track)
-
-    async def simulated_sdr_feed(self):
-        """SDR feed simulation - only if synthetic enabled"""
-        while self.running:
-            await asyncio.sleep(2)
-            if getattr(settings, 'enable_synthetic_data', False):
-                iq_samples = np.random.randn(1024) + 1j * np.random.randn(1024)
-                result = await self.drone_detector.analyze(iq_samples, 2.4e6)
-                if result:
-                    await self._emit_rf_anomaly(result)
-                    uav_track = self._create_simulated_track(SourceType.sdr, AircraftClassification.uav)
-                    await self._process_track(uav_track)
+            # Real ADS-B Exchange integration would go here
+            # Requires API key: settings.adsb_exchange_api_key
+            pass
 
     async def _process_track(self, track: AirTrack):
         self.track_manager.process_measurement(track)
@@ -459,30 +419,3 @@ class AirDomainIngestor:
             "confidence": result["confidence"],
         }
         await kafka_client.send_event("rf-signals", anomaly, key=f"rf-{time.time_ns()}")
-
-    def _create_simulated_track(self, source: SourceType = SourceType.simulated, classification: AircraftClassification = AircraftClassification.commercial) -> AirTrack:
-        import random
-        base_lat = 40.7128 + random.uniform(-5, 5)
-        base_lon = -74.0060 + random.uniform(-5, 5)
-        return AirTrack(
-            icao24=f"{random.randint(0, 0xFFFFFF):06x}",
-            callsign=f"SIM{random.randint(100, 999)}" if random.random() > 0.3 else None,
-            origin_country=random.choice(["US", "UK", "DE", "FR", "JP", "Unknown"]),
-            lat=base_lat,
-            lon=base_lon,
-            baro_altitude_m=random.uniform(3000, 12000),
-            geo_altitude_m=random.uniform(3000, 12000),
-            velocity_ms=random.uniform(100, 280),
-            true_track_deg=random.uniform(0, 360),
-            vertical_rate_ms=random.uniform(-5, 5),
-            squawk=random.choice(["1200", "1400", "2000", None, None, None]),
-            on_ground=False,
-            source=source,
-            classification=classification,
-            classification_confidence=random.uniform(0.7, 0.99),
-        )
-
-    def _generate_simulated_tracks(self, count: int = 10):
-        for _ in range(count):
-            track = self._create_simulated_track()
-            asyncio.create_task(self._process_track(track))
