@@ -801,6 +801,74 @@ async def get_missile_live_tracks():
         return [_missile_event_to_dict(e) for e in result.scalars()]
 
 
+@app.get("/api/v1/missile/military-bases")
+async def get_military_bases(country: Optional[str] = None, type: Optional[str] = None):
+    """
+    Return military installation data from the protected backend YAML dataset.
+    This data NEVER lives in the frontend — served exclusively from the backend.
+
+    Query params:
+      country  : Filter by ISO country code (e.g. IDN, USA, RUS)
+      type     : Filter by installation type (nuclear|naval|airforce|army|icbm|missile)
+    """
+    import yaml as _yaml
+
+    bases_file = os.path.join(
+        os.path.dirname(__file__), "..", "..", "data", "missile_intel", "military_bases.yaml"
+    )
+    bases_file = os.path.normpath(bases_file)
+
+    if not os.path.exists(bases_file):
+        raise HTTPException(status_code=503, detail="Military bases dataset not found. Ensure data/missile_intel/military_bases.yaml exists.")
+
+    try:
+        with open(bases_file, "r", encoding="utf-8") as f:
+            raw = _yaml.safe_load(f)
+    except Exception as e:
+        logger.error(f"Failed to load military_bases.yaml: {e}")
+        raise HTTPException(status_code=500, detail="Failed to load military bases dataset.")
+
+    bases = raw.get("bases", [])
+
+    # Apply filters
+    if country:
+        bases = [b for b in bases if b.get("country", "").upper() == country.upper()]
+    if type:
+        bases = [b for b in bases if b.get("type", "").lower() == type.lower()]
+
+    return {
+        "total": len(bases),
+        "filters": {"country": country, "type": type},
+        "bases": bases,
+    }
+
+
+@app.get("/api/v1/ui-presets")
+async def get_ui_presets():
+    """
+    Return UI presets (global_bases, country_presets, etc.) from the protected backend YAML.
+    This prevents sensitive coordinates and configuration from being hardcoded in the frontend.
+    """
+    import yaml as _yaml
+    
+    presets_file = os.path.join(
+        os.path.dirname(__file__), "..", "..", "data", "missile_intel", "ui_presets.yaml"
+    )
+    presets_file = os.path.normpath(presets_file)
+
+    if not os.path.exists(presets_file):
+        raise HTTPException(status_code=503, detail="UI presets dataset not found.")
+
+    try:
+        with open(presets_file, "r", encoding="utf-8") as f:
+            raw = _yaml.safe_load(f)
+            return raw
+    except Exception as e:
+        logger.error(f"Failed to load ui_presets.yaml: {e}")
+        raise HTTPException(status_code=500, detail="Failed to load UI presets.")
+
+
+
 @app.post("/api/v1/missile/simulate")
 async def simulate_trajectory(request: dict):
     """
