@@ -265,6 +265,7 @@ sequenceDiagram
     participant MilitaryIntel
     participant Satellite
     participant OSINT
+    participant MissileTracking
     participant Ingestors
     participant Kafka
     participant AIEngine
@@ -277,22 +278,24 @@ sequenceDiagram
     User->>Frontend: Buka dashboard dan autentikasi
     Frontend->>Backend: GET /dashboard, berlangganan WebSocket
     Backend->>Database: Muat konfigurasi pengguna, status sesi, ambang batas
+    Backend->>Database: Muat data YAML statis (Pangkalan, Radar, Aturan)
     Backend->>Monitoring: Laporkan latensi permintaan dan kesehatan
     Backend->>Frontend: Kembalikan payload awal dashboard
     Sensors->>Ingestors: Kirim radar, ADS-B, SIGINT dan telemetri sensor
     MilitaryIntel->>Ingestors: Kirim umpan ancaman terklasifikasi
     Satellite->>Ingestors: Kirim data ruang angkasa, orbital, dan citra
     OSINT->>Ingestors: Kirim umpan siber open-source dan geopolitik
+    MissileTracking->>Ingestors: Kirim data peluncuran & lintasan rudal real-time
     Ingestors->>Kafka: Publikasikan peristiwa domain yang dinormalisasi
     Kafka->>Backend: Kirim aliran peristiwa untuk ingesti
     Backend->>AIEngine: Teruskan batch peristiwa untuk penilaian fusi
     AIEngine->>Backend: Kembalikan klasifikasi ancaman + kepercayaan
-    Backend->>ResponseEngine: Korelasikan peringatan dan rekomendasikan playbook
+    Backend->>ResponseEngine: Korelasikan peringatan, kalkulasi jangkauan rudal, dan rekomendasikan playbook
     ResponseEngine->>Blockchain: Simpan hash bukti audit
     ResponseEngine->>IPFS: Simpan bundel bukti mentah
     ResponseEngine->>Backend: Kembalikan proposal tindakan otomatis
     Backend->>Kafka: Publikasikan peristiwa pemberitahuan peringatan
-    Backend->>Frontend: Siarkan pembaruan ancaman langsung
+    Backend->>Frontend: Siarkan pembaruan ancaman langsung & lintasan rudal
     Frontend->>User: Render peta ancaman, detail insiden, status respons
 ```
 
@@ -305,6 +308,7 @@ classDiagram
     class Frontend {
         +Dashboard
         +ThreatMap
+        +MissileTrajectory
         +WebSocketClient
         +PlaybookPanel
         +NotificationFeed
@@ -314,7 +318,7 @@ classDiagram
         +WebSocket Server
         +Event Router
         +Auth & Session
-        +Config Loader
+        +YAMLConfigLoader
     }
     class Ingestors {
         +AirIngestor
@@ -322,6 +326,7 @@ classDiagram
         +CyberIngestor
         +RFIngestor
         +SeismicIngestor
+        +MissileIngestor
         +MilitaryIntelIngestor
         +SatelliteIngestor
         +OSINTIngestor
@@ -335,6 +340,7 @@ classDiagram
     class ResponseEngine {
         +PlaybookExecutor
         +AlertCorrelation
+        +RangeCalculator
         +IncidentManager
         +Notification Dispatcher
     }
@@ -344,6 +350,7 @@ classDiagram
         +Elasticsearch
         +TimescaleDB
         +Kafka
+        +YAML Intelligence Configs
     }
     class Blockchain {
         +Ethereum Hardhat
@@ -362,11 +369,11 @@ classDiagram
     }
 
     Frontend --> Backend: REST / WebSocket
-    Backend --> Persistence: simpan + cache + cari
+    Backend --> Persistence: simpan + cache + muat konfigurasi YAML
     Backend --> Kafka: publikasi/langganan
     Backend --> Ingestors: kontrol / konfigurasi
     Backend --> AIEngine: permintaan inferensi
-    Backend --> ResponseEngine: tindakan insiden
+    Backend --> ResponseEngine: tindakan insiden & kalkulasi
     ResponseEngine --> Blockchain: pencatatan audit
     ResponseEngine --> IPFS: penyimpanan bukti
     Backend --> Monitoring: metrik dan kesehatan
@@ -381,7 +388,7 @@ Tinjauan arsitektur profesional yang memetakan modul inti, dependensi runtime, d
 ```mermaid
 flowchart LR
     subgraph UI
-        Frontend["Frontend\nReact + Vite"]
+        Frontend["Frontend\nReact + Vite + DeckGL"]
     end
 
     subgraph API
@@ -393,6 +400,7 @@ flowchart LR
         Postgres["PostgreSQL\nTimescaleDB"]
         Redis["Redis\nCache & Sesi"]
         Elastic["Elasticsearch\nCari & Analitik"]
+        YAML["YAML Configs\nIntel & Presets"]
     end
 
     subgraph Infra
@@ -402,7 +410,7 @@ flowchart LR
     end
 
     subgraph Ingestion
-        Ingestors["Ingestors\nUdara/Maritim/Siber/RF/Seismik\nIntel Militer / Satelit / OSINT"]
+        Ingestors["Ingestors\nUdara/Maritim/Siber/RF/Seismik/Rudal\nIntel Militer / Satelit / OSINT"]
     end
 
     Frontend -->|HTTP / WS| Backend
@@ -411,6 +419,7 @@ flowchart LR
     Backend -->|Kueri / simpan| Postgres
     Backend -->|Cache / sesi| Redis
     Backend -->|Indeks / cari| Elastic
+    Backend -->|Muat config intel| YAML
     Backend -->|Keluarkan metrik| Monitoring
     Backend -->|Panggil respons| Blockchain
     Backend -->|Simpan bukti| IPFS
