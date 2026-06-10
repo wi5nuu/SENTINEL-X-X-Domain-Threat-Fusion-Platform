@@ -78,6 +78,21 @@ class CyberEncoder(nn.Module):
         return self.net(x)
 
 
+class SpaceEncoder(nn.Module):
+    def __init__(self, input_dim: int = 12, embedding_dim: int = 128):
+        super().__init__()
+        self.net = nn.Sequential(
+            nn.Linear(input_dim, 64),
+            nn.ReLU(),
+            nn.Linear(64, 128),
+            nn.ReLU(),
+            nn.Linear(128, embedding_dim),
+        )
+
+    def forward(self, x):
+        return self.net(x)
+
+
 class TemporalTransformer(nn.Module):
     def __init__(self, embedding_dim: int = 128, num_heads: int = 4, num_layers: int = 4, max_seq_len: int = 256):
         super().__init__()
