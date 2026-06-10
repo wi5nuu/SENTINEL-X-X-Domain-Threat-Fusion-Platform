@@ -12,22 +12,7 @@ type Track = {
   missile_type?: string; missile_id?: string; domain?: string; classification?: string;
 };
 
-// PRECISE GLOBAL MILITARY DATASET (Representing major nations)
-const GLOBAL_BASES = [
-  { name: "Halim Perdanakusuma", lat: -6.26, lon: 106.88, country: "ID" },
-  { name: "Pentagon", lat: 38.87, lon: -77.05, country: "US" },
-  { name: "Znamensky", lat: 55.75, lon: 37.61, country: "RU" },
-  { name: "Bayi Building", lat: 39.90, lon: 116.39, country: "CN" },
-  { name: "Northwood HQ", lat: 51.60, lon: -0.42, country: "UK" },
-  { name: "Balard", lat: 48.83, lon: 2.27, country: "FR" },
-  { name: "New Delhi HQ", lat: 28.61, lon: 77.20, country: "IN" },
-  { name: "Ichigaya", lat: 35.69, lon: 139.72, country: "JP" },
-  { name: "Seoul HQ", lat: 37.56, lon: 126.97, country: "KR" },
-  { name: "Brasilia HQ", lat: -15.79, lon: -47.88, country: "BR" },
-  { name: "Cairo HQ", lat: 30.04, lon: 31.23, country: "EG" },
-  { name: "Canberra HQ", lat: -35.28, lon: 149.13, country: "AU" },
-  { name: "Pretoria HQ", lat: -25.74, lon: 28.18, country: "ZA" },
-];
+// PRECISE GLOBAL MILITARY DATASET is now loaded dynamically from the backend to protect sensitive coordinate data.
 
 // Professional SVG Bunker Icon
 const BUNKER_ICON_SVG = `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#FF4444" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4 22V10l8-8 8 8v12M12 22V10"/></svg>`;
@@ -47,6 +32,22 @@ export default function GlobalMap({ tracks = [], center, zoom, entityFilter = "a
   const baseLayer = useRef<L.LayerGroup | null>(null);
   const trajectoryLayer = useRef<L.LayerGroup | null>(null);
   const [is3D, setIs3D] = useState(false);
+  const [globalBases, setGlobalBases] = useState<any[]>([]);
+
+  useEffect(() => {
+    const fetchBases = async () => {
+      try {
+        const res = await fetch("http://localhost:8000/api/v1/ui-presets");
+        if (res.ok) {
+          const data = await res.json();
+          setGlobalBases(data.global_bases || []);
+        }
+      } catch (err) {
+        console.error("Failed to load bases:", err);
+      }
+    };
+    fetchBases();
+  }, []);
 
   useEffect(() => {
     if (mapRef.current && center) {
@@ -73,7 +74,7 @@ export default function GlobalMap({ tracks = [], center, zoom, entityFilter = "a
 
     // Render Accurate Bases
     if (entityFilter === "all" || entityFilter === "bases") {
-      GLOBAL_BASES.forEach(b => {
+      globalBases.forEach(b => {
         L.marker([b.lat, b.lon], { icon: ICONS.base })
          .bindPopup(`<div style="font-family:monospace;font-size:10px"><b>${b.name}</b><br/>HQ: ${b.country}</div>`)
          .addTo(baseLayer.current!);
