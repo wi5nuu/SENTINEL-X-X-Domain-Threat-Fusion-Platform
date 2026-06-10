@@ -106,13 +106,19 @@ class SentinelAnalyst:
         """Explainable AI: Generate reasoning chain for an alert."""
         reasons = []
         if alert.domain == "air":
-            if "7500" in alert.description: reasons.append("Hijacking squawk detected")
-            if "7600" in alert.description: reasons.append("Radio failure detected")
-            if "7700" in alert.description: reasons.append("Emergency squawk detected")
-            if alert.confidence > 0.9: reasons.append("High-confidence ADS-B signature match")
+            if "7500" in alert.description:
+                reasons.append("Hijacking squawk detected")
+            if "7600" in alert.description:
+                reasons.append("Radio failure detected")
+            if "7700" in alert.description:
+                reasons.append("Emergency squawk detected")
+            if alert.confidence > 0.9:
+                reasons.append("High-confidence ADS-B signature match")
         elif alert.domain == "maritime":
-            if "AIS gap" in alert.description: reasons.append("Dark vessel pattern (AIS transmitter disabled)")
-            if "high speed" in alert.description: reasons.append("Atypical vessel velocity for area")
+            if "AIS gap" in alert.description:
+                reasons.append("Dark vessel pattern (AIS transmitter disabled)")
+            if "high speed" in alert.description:
+                reasons.append("Atypical vessel velocity for area")
         elif alert.domain == "cyber":
             reasons.append("Signature match with known malicious IOC")
         elif alert.domain == "seismic":
