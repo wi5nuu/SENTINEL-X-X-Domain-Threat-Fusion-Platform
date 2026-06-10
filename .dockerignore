@@ -117,7 +117,6 @@ db.json
 *.sqlite
 *.sqlite3
 web3block.txt
-alembic.ini
 *.db-shm
 *.db-wal
 postgres_data/
