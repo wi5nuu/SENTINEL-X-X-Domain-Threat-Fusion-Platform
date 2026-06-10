@@ -11,6 +11,7 @@ type Track = {
   is_threat?: boolean; heading?: number; is_missile?: boolean;
   origin_lat?: number; origin_lon?: number;
   target_lat?: number; target_lon?: number;
+  altitude?: number;
 };
 
 /* ─── Global Military Bases Dataset ─────────────────────────────── */
@@ -371,7 +372,7 @@ export default function Globe3D({ tracks }: Globe3DProps) {
       new ScatterplotLayer({
         id: 'tracks-layer',
         data: tracks,
-        getPosition: (d: Track) => [d.lon, d.lat],
+        getPosition: (d: Track) => [d.lon, d.lat, d.altitude || 0],
         getFillColor: (d: Track) => {
           const hex = d.color || '#00D4FF';
           return [parseInt(hex.slice(1,3),16), parseInt(hex.slice(3,5),16), parseInt(hex.slice(5,7),16), d.is_threat ? 255 : 200];

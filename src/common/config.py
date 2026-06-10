@@ -78,6 +78,13 @@ class Settings(BaseSettings):
     alert_retention_days: int = 365
     log_retention_days: int = 30
 
+    # Missile Intelligence
+    acled_api_key: Optional[str] = None
+    acled_api_url: str = "https://api.acleddata.com/acled/read"
+    missile_intel_refresh_hours: int = 6
+    enable_what_if_simulation: bool = True
+    missile_data_path: str = "data/missile_intel"
+
     class Config:
         env_file = ".env"
         case_sensitive = False

@@ -13,6 +13,7 @@ import AlertVolumeChart from "./components/AlertVolumeChart";
 import StatsPage from "./StatsPage";
 import GlobalStatusPage from "./GlobalStatusPage";
 import Globe3D from "./components/Globe3D";
+import MissilePage from "./MissilePage";
 
 import SituationalTicker from "./components/SituationalTicker";
 import TacticalAnalyst from "./components/TacticalAnalyst";
@@ -314,6 +315,9 @@ function App() {
   if (location.pathname === "/global-status") {
     return <GlobalStatusPage alerts={alerts} tracks={tracks} dashboard={dashboard} eventsPerHr={eventsPerHr} threatScore={threatScore} onClose={() => navigate("/")} />;
   }
+  if (location.pathname === "/missile-intel") {
+    return <MissilePage onClose={() => navigate("/")} />;
+  }
 
   return (
     <div ref={hudRef} className="h-screen flex flex-col overflow-hidden" style={{ background: "#0A0E1A", color: "#94A3B8", fontFamily: "monospace" }}>
@@ -359,6 +363,7 @@ function App() {
           <span className="text-gray-700">|</span>
           <button onClick={() => navigate("/statistik")} className="text-[10px] px-2 py-0.5 rounded border" style={{ color: "#00D4FF", borderColor: "rgba(0,212,255,0.3)" }}>STATS</button>
           <button onClick={() => navigate("/global-status")} className="text-[10px] px-2 py-0.5 rounded border" style={{ color: "#F59E0B", borderColor: "rgba(245,158,11,0.3)" }}>GLOBAL</button>
+          <button onClick={() => navigate("/missile-intel")} className="text-[10px] px-2 py-0.5 rounded border font-bold" style={{ color: "#EF4444", borderColor: "rgba(239,68,68,0.4)", background: "rgba(239,68,68,0.1)" }}>MISSILES</button>
           <button
             onClick={() => setMapMode(m => m === "2d" ? "3d" : "2d")}
             className="text-[10px] px-2 py-0.5 rounded border font-bold"

@@ -15,8 +15,10 @@ from sqlalchemy import select, func
 from src.common.config import settings
 from src.common.logging import setup_logging
 from src.common.kafka import kafka_client
-from src.common.database import init_db, async_session, AlertDB, ResponseActionDB
+from src.common.database import init_db, async_session, AlertDB, ResponseActionDB, MissileEventDB, MissileSpecDB, DefenseSystemDB
 from src.common.models import Alert, ThreatLevel, CompoundThreat
+from src.missile.trajectory import calculator as traj_calc, intercept_analyzer
+from src.missile.range_calculator import compute_coverage_zones, countries_in_range, flight_time_estimate
 from prometheus_client import CONTENT_TYPE_LATEST
 from src.common.metrics import get_metrics
 from src.common.websocket_broadcast import ws_manager
@@ -173,6 +175,7 @@ async def lifespan(app: FastAPI):
         ("seismic-events", "api-seismic"),
         ("rf-signals", "api-rf"),
         ("cyber-events", "api-cyber"),
+        ("missile-events", "api-missile"),
     ]
     for topic, group in topics:
         handler = _alert_handler if topic == "alerts" else _track_handler
@@ -555,3 +558,408 @@ def _get_recommended_actions(threat_class: ThreatLevel) -> list:
         ThreatLevel.informational: ["Log and monitor"],
     }
     return actions.get(threat_class, ["Log and monitor"])
+
+
+# ─────────────────────────────────────────────────────────
+# MISSILE INTELLIGENCE API
+# ─────────────────────────────────────────────────────────
+
+
+def _missile_event_to_dict(e: MissileEventDB) -> dict:
+    return {
+        "event_id": e.id,
+        "launch_time": e.launch_time.isoformat() if e.launch_time else None,
+        "impact_time": e.impact_time.isoformat() if e.impact_time else None,
+        "origin_country": e.origin_country,
+        "origin_actor": e.origin_actor,
+        "launch_lat": e.launch_lat,
+        "launch_lon": e.launch_lon,
+        "launch_location_name": e.launch_location_name,
+        "target_country": e.target_country,
+        "target_lat": e.target_lat,
+        "target_lon": e.target_lon,
+        "target_name": e.target_name,
+        "missile_type": e.missile_type,
+        "missile_count": e.missile_count,
+        "status": e.status,
+        "intercepted_count": e.intercepted_count,
+        "interception_system": e.interception_system,
+        "damage_assessment": e.damage_assessment,
+        "casualties_reported": e.casualties_reported,
+        "estimated_range_km": e.estimated_range_km,
+        "flight_duration_s": e.flight_duration_s,
+        "headline": e.headline,
+        "source_url": e.source_url,
+        "source_name": e.source_name,
+        "validation_status": e.validation_status,
+        "corroborating_sources": e.corroborating_sources or [],
+        "conflict_context": e.conflict_context,
+        "notes": e.notes,
+    }
+
+
+@app.get("/api/v1/missile/events")
+async def get_missile_events(
+    origin_country: Optional[str] = None,
+    target_country: Optional[str] = None,
+    status: Optional[str] = None,
+    missile_type: Optional[str] = None,
+    validation_status: Optional[str] = None,
+    limit: int = Query(default=100, le=500),
+    offset: int = Query(default=0, ge=0),
+):
+    """List missile events with optional filters. Source-attributed OSINT data only."""
+    async with async_session() as session:
+        stmt = select(MissileEventDB).order_by(MissileEventDB.launch_time.desc()).limit(limit).offset(offset)
+        if origin_country:
+            stmt = stmt.where(MissileEventDB.origin_country == origin_country.upper())
+        if target_country:
+            stmt = stmt.where(MissileEventDB.target_country == target_country.upper())
+        if status:
+            stmt = stmt.where(MissileEventDB.status == status)
+        if missile_type:
+            stmt = stmt.where(MissileEventDB.missile_type.ilike(f"%{missile_type}%"))
+        if validation_status:
+            stmt = stmt.where(MissileEventDB.validation_status == validation_status)
+        result = await session.execute(stmt)
+        return [_missile_event_to_dict(e) for e in result.scalars()]
+
+
+@app.get("/api/v1/missile/events/{event_id}")
+async def get_missile_event(event_id: str):
+    """Get a single missile event with full details and trajectory."""
+    async with async_session() as session:
+        result = await session.execute(select(MissileEventDB).where(MissileEventDB.id == event_id))
+        e = result.scalar_one_or_none()
+        if not e:
+            raise HTTPException(status_code=404, detail="Event not found")
+        data = _missile_event_to_dict(e)
+        data["trajectory_cached"] = e.trajectory_cache or []
+        return data
+
+
+@app.get("/api/v1/missile/events/{event_id}/trajectory")
+async def get_missile_trajectory(event_id: str):
+    """
+    Get or compute trajectory for a missile event.
+    Uses cached trajectory if available; otherwise computes from spec.
+    """
+    async with async_session() as session:
+        result = await session.execute(select(MissileEventDB).where(MissileEventDB.id == event_id))
+        e = result.scalar_one_or_none()
+        if not e:
+            raise HTTPException(status_code=404, detail="Event not found")
+
+        if e.trajectory_cache:
+            return {"event_id": event_id, "mode": "historical", "points": e.trajectory_cache}
+
+        if not (e.launch_lat and e.launch_lon and e.target_lat and e.target_lon):
+            raise HTTPException(status_code=422, detail="Insufficient coordinates for trajectory computation")
+
+        # Get spec
+        spec_dict = {}
+        if e.missile_type:
+            spec_result = await session.execute(
+                select(MissileSpecDB).where(MissileSpecDB.name.ilike(f"%{e.missile_type}%"))
+            )
+            spec = spec_result.scalar_one_or_none()
+            if spec:
+                spec_dict = {
+                    "speed_mach": spec.speed_mach,
+                    "boost_phase_s": spec.boost_phase_s,
+                    "midcourse_phase_s": spec.midcourse_phase_s,
+                    "terminal_phase_s": spec.terminal_phase_s,
+                    "apogee_km": spec.apogee_km,
+                    "payload_kg": spec.payload_kg,
+                }
+
+        points = traj_calc.compute(
+            e.launch_lat, e.launch_lon, e.target_lat, e.target_lon, spec_dict
+        )
+        pts_dicts = [
+            {"time_s": p.time_s, "lat": p.lat, "lon": p.lon,
+             "altitude_km": p.altitude_km, "speed_ms": p.speed_ms,
+             "phase": p.phase, "downrange_km": p.downrange_km}
+            for p in points
+        ]
+
+        # Cache computed trajectory
+        e.trajectory_cache = pts_dicts
+        await session.commit()
+
+        return {"event_id": event_id, "mode": "historical", "points": pts_dicts}
+
+
+@app.get("/api/v1/missile/capabilities")
+async def get_missile_capabilities(
+    operator_country: Optional[str] = None,
+    missile_type: Optional[str] = None,
+    operational_status: Optional[str] = None,
+    min_range_km: Optional[float] = None,
+    limit: int = Query(default=200, le=500),
+):
+    """Full missile capability database with optional filters."""
+    async with async_session() as session:
+        stmt = select(MissileSpecDB).order_by(MissileSpecDB.operator_country, MissileSpecDB.max_range_km.desc()).limit(limit)
+        if operator_country:
+            stmt = stmt.where(MissileSpecDB.operator_country == operator_country.upper())
+        if missile_type:
+            stmt = stmt.where(MissileSpecDB.missile_type.ilike(f"%{missile_type}%"))
+        if operational_status:
+            stmt = stmt.where(MissileSpecDB.operational_status == operational_status)
+        if min_range_km:
+            stmt = stmt.where(MissileSpecDB.max_range_km >= min_range_km)
+        result = await session.execute(stmt)
+        return [
+            {
+                "id": s.id, "name": s.name, "nato_designation": s.nato_designation,
+                "operator_country": s.operator_country, "missile_type": s.missile_type,
+                "max_range_km": s.max_range_km, "min_range_km": s.min_range_km,
+                "speed_mach": s.speed_mach, "apogee_km": s.apogee_km,
+                "cep_m": s.cep_m, "payload_kg": s.payload_kg,
+                "warhead_types": s.warhead_types, "launch_method": s.launch_method,
+                "guidance_type": s.guidance_type,
+                "boost_phase_s": s.boost_phase_s, "midcourse_phase_s": s.midcourse_phase_s,
+                "terminal_phase_s": s.terminal_phase_s,
+                "operational_status": s.operational_status,
+                "first_test_date": s.first_test_date, "ioc_date": s.ioc_date,
+                "sources": s.sources,
+            }
+            for s in result.scalars()
+        ]
+
+
+@app.get("/api/v1/missile/capabilities/{name}")
+async def get_missile_spec(name: str):
+    """Get single missile capability record by name."""
+    async with async_session() as session:
+        result = await session.execute(
+            select(MissileSpecDB).where(MissileSpecDB.name.ilike(f"%{name}%"))
+        )
+        s = result.scalar_one_or_none()
+        if not s:
+            raise HTTPException(status_code=404, detail=f"Missile spec not found: {name}")
+        return {
+            "id": s.id, "name": s.name, "nato_designation": s.nato_designation,
+            "operator_country": s.operator_country, "missile_type": s.missile_type,
+            "max_range_km": s.max_range_km, "min_range_km": s.min_range_km,
+            "speed_mach": s.speed_mach, "apogee_km": s.apogee_km,
+            "cep_m": s.cep_m, "payload_kg": s.payload_kg,
+            "warhead_types": s.warhead_types, "launch_method": s.launch_method,
+            "guidance_type": s.guidance_type,
+            "boost_phase_s": s.boost_phase_s, "midcourse_phase_s": s.midcourse_phase_s,
+            "terminal_phase_s": s.terminal_phase_s,
+            "operational_status": s.operational_status,
+            "first_test_date": s.first_test_date, "ioc_date": s.ioc_date,
+            "sources": s.sources,
+        }
+
+
+@app.get("/api/v1/missile/defense-systems")
+async def get_defense_systems(
+    operator_country: Optional[str] = None,
+    system_type: Optional[str] = None,
+    operational_status: Optional[str] = None,
+):
+    """Registry of missile defense systems with coverage data."""
+    async with async_session() as session:
+        stmt = select(DefenseSystemDB).order_by(DefenseSystemDB.operator_country)
+        if operator_country:
+            stmt = stmt.where(DefenseSystemDB.operator_country == operator_country.upper())
+        if system_type:
+            stmt = stmt.where(DefenseSystemDB.system_type == system_type)
+        if operational_status:
+            stmt = stmt.where(DefenseSystemDB.operational_status.ilike(f"%{operational_status}%"))
+        result = await session.execute(stmt)
+        return [
+            {
+                "id": d.id, "name": d.name, "system_type": d.system_type,
+                "platform_name": d.platform_name, "operator_country": d.operator_country,
+                "lat": d.lat, "lon": d.lon, "location_name": d.location_name,
+                "radar_range_km": d.radar_range_km,
+                "intercept_range_km": d.intercept_range_km,
+                "intercept_altitude_max_km": d.intercept_altitude_max_km,
+                "interceptor_type": d.interceptor_type,
+                "engagement_envelope": d.engagement_envelope,
+                "operational_status": d.operational_status,
+                "sources": d.sources,
+            }
+            for d in result.scalars()
+        ]
+
+
+@app.get("/api/v1/missile/live-tracks")
+async def get_missile_live_tracks():
+    """Return currently active missile events (in_flight or launched status)."""
+    async with async_session() as session:
+        result = await session.execute(
+            select(MissileEventDB)
+            .where(MissileEventDB.status.in_(["launched", "in_flight"]))
+            .order_by(MissileEventDB.launch_time.desc())
+            .limit(50)
+        )
+        return [_missile_event_to_dict(e) for e in result.scalars()]
+
+
+@app.post("/api/v1/missile/simulate")
+async def simulate_trajectory(request: dict):
+    """
+    What-If trajectory simulation.
+    Computes a physics-based trajectory for any missile + launch/target coords.
+    Results are CLEARLY LABELLED as simulation — not real events.
+    """
+    if not settings.enable_what_if_simulation:
+        raise HTTPException(status_code=403, detail="What-if simulation is disabled")
+
+    missile_name = request.get("missile")
+    launch_lat = request.get("launch_lat")
+    launch_lon = request.get("launch_lon")
+    target_lat = request.get("target_lat")
+    target_lon = request.get("target_lon")
+
+    if not all([missile_name, launch_lat is not None, launch_lon is not None,
+                target_lat is not None, target_lon is not None]):
+        raise HTTPException(status_code=400, detail="Required: missile, launch_lat, launch_lon, target_lat, target_lon")
+
+    async with async_session() as session:
+        spec_result = await session.execute(
+            select(MissileSpecDB).where(MissileSpecDB.name.ilike(f"%{missile_name}%"))
+        )
+        spec = spec_result.scalar_one_or_none()
+        if not spec:
+            raise HTTPException(status_code=404, detail=f"Missile not found: {missile_name}")
+
+        spec_dict = {
+            "speed_mach": spec.speed_mach, "boost_phase_s": spec.boost_phase_s,
+            "midcourse_phase_s": spec.midcourse_phase_s,
+            "terminal_phase_s": spec.terminal_phase_s,
+            "apogee_km": spec.apogee_km, "payload_kg": spec.payload_kg,
+            "max_range_km": spec.max_range_km,
+        }
+
+        points = traj_calc.compute(
+            float(launch_lat), float(launch_lon),
+            float(target_lat), float(target_lon),
+            spec_dict
+        )
+
+        # Interception analysis
+        ds_result = await session.execute(select(DefenseSystemDB))
+        defense_systems = [
+            {"name": d.name, "lat": d.lat, "lon": d.lon,
+             "intercept_range_km": d.intercept_range_km,
+             "intercept_altitude_max_km": d.intercept_altitude_max_km,
+             "operational_status": d.operational_status}
+            for d in ds_result.scalars()
+        ]
+
+    intercept_info = intercept_analyzer.analyze(
+        [p for p in points],  # pass as list of TrajPoint
+        defense_systems
+    )
+
+    pts_dicts = [
+        {"time_s": p.time_s, "lat": p.lat, "lon": p.lon,
+         "altitude_km": p.altitude_km, "speed_ms": p.speed_ms,
+         "phase": p.phase, "downrange_km": p.downrange_km}
+        for p in points
+    ]
+
+    total_flight_s = pts_dicts[-1]["time_s"] if pts_dicts else 0
+
+    return {
+        "WARNING": "THIS IS A SIMULATION — NOT A REAL EVENT",
+        "mode": "what_if",
+        "missile": spec.name,
+        "operator_country": spec.operator_country,
+        "launch_lat": launch_lat, "launch_lon": launch_lon,
+        "target_lat": target_lat, "target_lon": target_lon,
+        "total_range_km": round(pts_dicts[-1]["downrange_km"] if pts_dicts else 0, 1),
+        "total_flight_s": round(total_flight_s, 0),
+        "total_flight_min": round(total_flight_s / 60.0, 1),
+        "points": pts_dicts,
+        "interception_analysis": {
+            "threatened_defense_systems": intercept_info["threatened_defense_systems"],
+            "estimated_intercept_probability": intercept_info["estimated_intercept_probability"],
+        },
+    }
+
+
+@app.post("/api/v1/missile/range-coverage")
+async def missile_range_coverage(request: dict):
+    """
+    Compute reachable area (range rings) for a missile from a launch point.
+    Returns GeoJSON-compatible polygon rings and list of countries in range.
+    """
+    missile_name = request.get("missile")
+    launch_lat = request.get("launch_lat")
+    launch_lon = request.get("launch_lon")
+
+    if not all([missile_name, launch_lat is not None, launch_lon is not None]):
+        raise HTTPException(status_code=400, detail="Required: missile, launch_lat, launch_lon")
+
+    async with async_session() as session:
+        spec_result = await session.execute(
+            select(MissileSpecDB).where(MissileSpecDB.name.ilike(f"%{missile_name}%"))
+        )
+        spec = spec_result.scalar_one_or_none()
+        if not spec:
+            raise HTTPException(status_code=404, detail=f"Missile not found: {missile_name}")
+
+    zones = compute_coverage_zones(
+        float(launch_lat), float(launch_lon),
+        spec.max_range_km, spec.min_range_km,
+    )
+    reachable = countries_in_range(float(launch_lat), float(launch_lon), spec.max_range_km)
+
+    flight_t = flight_time_estimate(
+        spec.max_range_km, spec.speed_mach,
+        spec.boost_phase_s or 0,
+        spec.midcourse_phase_s or 0,
+        spec.terminal_phase_s or 0,
+    )
+
+    return {
+        "WARNING": "THIS IS A SIMULATION — NOT A REAL EVENT",
+        "missile": spec.name,
+        "operator_country": spec.operator_country,
+        "launch_lat": launch_lat, "launch_lon": launch_lon,
+        "max_range_km": spec.max_range_km,
+        "min_range_km": spec.min_range_km,
+        "estimated_max_flight_s": round(flight_t, 0),
+        "zones": [
+            {"range_km": z["range_km"], "color": z["color"],
+             "ring": z["ring"], "is_max_range": z["is_max_range"]}
+            for z in zones
+        ],
+        "countries_in_range": reachable,
+    }
+
+
+@app.get("/api/v1/missile/stats")
+async def missile_stats():
+    """Aggregate statistics for the missile intelligence database."""
+    async with async_session() as session:
+        total_events = (await session.execute(select(func.count()).select_from(MissileEventDB))).scalar_one()
+        verified = (await session.execute(
+            select(func.count()).select_from(MissileEventDB).where(MissileEventDB.validation_status == "verified")
+        )).scalar_one()
+        total_specs = (await session.execute(select(func.count()).select_from(MissileSpecDB))).scalar_one()
+        total_defense = (await session.execute(select(func.count()).select_from(DefenseSystemDB))).scalar_one()
+
+        # Events by status
+        status_counts = {}
+        for status in ["impacted", "intercepted", "test", "unknown", "launched", "in_flight"]:
+            cnt = (await session.execute(
+                select(func.count()).select_from(MissileEventDB).where(MissileEventDB.status == status)
+            )).scalar_one()
+            if cnt > 0:
+                status_counts[status] = cnt
+
+    return {
+        "total_events": total_events,
+        "verified_events": verified,
+        "total_missile_specs": total_specs,
+        "total_defense_systems": total_defense,
+        "events_by_status": status_counts,
+    }

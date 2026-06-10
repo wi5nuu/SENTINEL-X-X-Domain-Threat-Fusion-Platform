@@ -226,6 +226,20 @@ services:
 
     logging: *default-logging
 
+  sentinel-ingestor-missile:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.ingestor
+    container_name: sentinel-ingestor-missile
+    depends_on:
+      kafka:
+        condition: service_healthy
+    env_file: .env
+    environment:
+      INGESTOR_TYPE: missile
+
+    logging: *default-logging
+
   sentinel-ai-engine:
     build:
       context: .

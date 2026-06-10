@@ -180,3 +180,156 @@ class CompoundThreat(BaseModel):
     compound_pattern: str = ""
     recommended_actions: List[str] = Field(default_factory=list)
     false_positive_probability: float = 0.0
+
+
+# ─── Missile Intelligence Models ───────────────────────────────────────────
+
+class MissilePhase(str, Enum):
+    boost = "boost"
+    midcourse = "midcourse"
+    terminal = "terminal"
+    impact = "impact"
+    intercepted = "intercepted"
+
+
+class MissileStatus(str, Enum):
+    launched = "launched"
+    in_flight = "in_flight"
+    impacted = "impacted"
+    intercepted = "intercepted"
+    failed = "failed"
+    test = "test"
+    unknown = "unknown"
+
+
+class ValidationStatus(str, Enum):
+    verified = "verified"
+    corroborated = "corroborated"   # multiple sources agree
+    unverified = "unverified"       # single source, not yet cross-checked
+    disputed = "disputed"           # conflicting reports
+    retracted = "retracted"
+
+
+class SimulationMode(str, Enum):
+    historical = "historical"   # replay of a real event
+    live = "live"               # extrapolation of an active event
+    what_if = "what_if"         # hypothetical scenario
+
+
+class MissileSpec(BaseModel):
+    """Verified missile capability record — sourced from OSINT / public references."""
+    spec_id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    name: str                                       # e.g. "Hwasong-17"
+    nato_designation: Optional[str] = None          # e.g. "KN-22"
+    operator_country: str                           # ISO 3166-1 alpha-3 e.g. "PRK"
+    missile_type: str                               # ICBM / IRBM / MRBM / SRBM / cruise / HGV / SLBM
+    max_range_km: float
+    min_range_km: float = 0.0
+    speed_mach: float                               # approximate average speed
+    apogee_km: Optional[float] = None              # max altitude in flight
+    cep_m: Optional[float] = None                  # circular error probable
+    payload_kg: Optional[float] = None
+    warhead_types: List[str] = Field(default_factory=list)  # ["HE", "nuclear_capable", "cluster"]
+    launch_method: str = "unknown"                 # road_mobile_TEL, silo, submarine, air_launched
+    guidance_type: str = "inertial"               # inertial, GPS, terrain_contour, stellar, electro_optical
+    boost_phase_s: Optional[float] = None          # seconds
+    midcourse_phase_s: Optional[float] = None
+    terminal_phase_s: Optional[float] = None
+    operational_status: str = "unknown"           # operational, developmental, retired, test_only
+    first_test_date: Optional[str] = None
+    ioc_date: Optional[str] = None                # initial operating capability
+    sources: List[str] = Field(default_factory=list)  # e.g. ["CSIS Missile Defense Project"]
+    updated_at: datetime = Field(default_factory=datetime.utcnow)
+
+
+class MissileEvent(BaseModel):
+    """Real-world missile launch/attack event from OSINT sources."""
+    event_id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    # Temporal
+    launch_time: Optional[datetime] = None
+    detection_time: Optional[datetime] = None
+    impact_time: Optional[datetime] = None
+    # Origin
+    origin_country: str = ""
+    origin_actor: Optional[str] = None            # e.g. "Iran IRGC" or "Houthi (Ansar Allah)"
+    launch_lat: Optional[float] = None
+    launch_lon: Optional[float] = None
+    launch_location_name: Optional[str] = None
+    # Target
+    target_country: str = ""
+    target_lat: Optional[float] = None
+    target_lon: Optional[float] = None
+    target_name: Optional[str] = None             # e.g. "Tel Aviv", "Patriot Battery Alpha"
+    # Missile
+    missile_type: Optional[str] = None            # FK to MissileSpec.name
+    missile_count: int = 1
+    # Outcome
+    status: MissileStatus = MissileStatus.unknown
+    intercepted_count: int = 0
+    interception_system: Optional[str] = None     # e.g. "Iron Dome", "Arrow-3"
+    damage_assessment: Optional[str] = None
+    casualties_reported: Optional[str] = None
+    # Distance & flight
+    estimated_range_km: Optional[float] = None
+    flight_duration_s: Optional[float] = None
+    # Provenance
+    headline: str = ""
+    source_url: str = ""
+    source_name: str = ""
+    validation_status: ValidationStatus = ValidationStatus.unverified
+    corroborating_sources: List[str] = Field(default_factory=list)
+    # Event context
+    conflict_context: Optional[str] = None       # e.g. "Iran-Israel escalation cycle"
+    notes: Optional[str] = None
+    ingested_at: datetime = Field(default_factory=datetime.utcnow)
+
+
+class DefenseSystem(BaseModel):
+    """Missile defense / early warning system record."""
+    system_id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    name: str                                     # e.g. "THAAD Battery Alpha"
+    system_type: str                              # SAM / ABM / SHORAD / EarlyWarning / Radar
+    platform_name: str                            # e.g. "THAAD", "S-400", "Iron Dome"
+    operator_country: str
+    lat: float
+    lon: float
+    location_name: Optional[str] = None
+    radar_range_km: Optional[float] = None
+    intercept_range_km: Optional[float] = None
+    intercept_altitude_max_km: Optional[float] = None
+    interceptor_type: Optional[str] = None       # e.g. "PAC-3 MSE", "SM-3 Block IIA"
+    engagement_envelope: Optional[dict] = None   # {"min_alt_km": x, "max_alt_km": y, "azimuth": [0,360]}
+    operational_status: str = "operational"
+    sources: List[str] = Field(default_factory=list)
+    updated_at: datetime = Field(default_factory=datetime.utcnow)
+
+
+class TrajectoryPoint(BaseModel):
+    """Single computed waypoint along a missile trajectory."""
+    time_s: float                   # seconds from launch
+    lat: float
+    lon: float
+    altitude_km: float
+    speed_ms: float
+    phase: MissilePhase
+    downrange_km: float             # distance from launch point
+
+
+class MissileTrajectory(BaseModel):
+    """Computed full trajectory for a missile event or simulation."""
+    trajectory_id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    event_id: Optional[str] = None
+    mode: SimulationMode
+    missile_spec_name: str
+    launch_lat: float
+    launch_lon: float
+    target_lat: float
+    target_lon: float
+    total_range_km: float
+    total_flight_s: float
+    points: List[TrajectoryPoint] = Field(default_factory=list)
+    computed_at: datetime = Field(default_factory=datetime.utcnow)
+    # Interception analysis
+    threatened_defense_systems: List[str] = Field(default_factory=list)
+    estimated_intercept_probability: float = 0.0
+    intercept_point: Optional[TrajectoryPoint] = None

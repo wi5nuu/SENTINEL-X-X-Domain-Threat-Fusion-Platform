@@ -120,3 +120,5 @@ fixtures/production/
 # Installation markers
 .installation_complete
 .setup_complete
+
+data/missile_intel/
