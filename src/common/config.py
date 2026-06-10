@@ -13,7 +13,6 @@ class Settings(BaseSettings):
     jwt_secret_key: str = "change-me-to-a-secure-random-string"
     
     # Security Settings
-    enable_synthetic_data: bool = False
     enable_data_encryption: bool = True
     api_key_rotation_hours: int = 24
     max_api_rate_limit: int = 1000
