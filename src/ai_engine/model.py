@@ -172,8 +172,3 @@ class ThreatFusionModel(nn.Module):
             "eta_minutes": self.eta_head(pooled),
             "confidence": self.confidence_head(pooled),
         }
-fier(pooled),
-            "compound_threat": self.compound_threat_head(pooled),
-            "eta_minutes": self.eta_head(pooled),
-            "confidence": self.confidence_head(pooled),
-        }
