@@ -142,12 +142,23 @@ class TrajectoryCalculator:
         bearing = _bearing(launch_lat, launch_lon, target_lat, target_lon)
 
         # ── Phase parameters from spec ──────────────────────────────
+        m_type = spec.get("missile_type", "ballistic").lower()
+        is_cruise = "cruise" in m_type or "hypersonic_glide" in m_type
+        
         max_speed_ms = spec.get("speed_mach", 10) * MACH_TO_MS
         boost_s = spec.get("boost_phase_s") or self._estimate_boost(total_range_km)
         midcourse_s = spec.get("midcourse_phase_s") or self._estimate_midcourse(total_range_km)
         terminal_s = spec.get("terminal_phase_s") or 120.0
-        apogee_km = spec.get("apogee_km") or self._estimate_apogee(total_range_km)
+        apogee_km = spec.get("apogee_km") or (0.1 if is_cruise else self._estimate_apogee(total_range_km))
         mass_kg = max(100.0, (spec.get("payload_kg") or 500.0) * 3)  # rough total launch mass
+
+        # ── Waypoint logic for Cruise Missiles ──────────────────────
+        # Create a "bend" in the path by shifting the midpoint 15 degrees off-axis
+        mid_lat, mid_lon = _dest_point(launch_lat, launch_lon, bearing, total_range_km / 2.0)
+        waypoint_bearing = (bearing + 90) % 360
+        bend_distance = total_range_km * 0.15 # 15% bend
+        if is_cruise:
+            mid_lat, mid_lon = _dest_point(mid_lat, mid_lon, waypoint_bearing, bend_distance)
 
         # ── Phase distance fractions ────────────────────────────────
         # Boost covers ~5% of range, terminal ~3%, midcourse the rest
@@ -161,9 +172,17 @@ class TrajectoryCalculator:
             frac = i / n_boost
             t = frac * boost_s
             dist_km = boost_range * frac
-            alt_km = apogee_km * 0.10 * frac          # climb to 10% apogee during boost
+            
+            if is_cruise:
+                alt_km = apogee_km * frac
+                # For cruise missiles, interpolate toward the curved waypoint
+                lat = launch_lat + (mid_lat - launch_lat) * (dist_km / (total_range_km / 2.0))
+                lon = launch_lon + (mid_lon - launch_lon) * (dist_km / (total_range_km / 2.0))
+            else:
+                alt_km = apogee_km * 0.10 * frac          # climb to 10% apogee during boost
+                lat, lon = _dest_point(launch_lat, launch_lon, bearing, dist_km)
+
             speed_ms = max_speed_ms * 0.5 * frac      # linear speed-up
-            lat, lon = _dest_point(launch_lat, launch_lon, bearing, dist_km)
             points.append(TrajPoint(
                 time_s=t, lat=lat, lon=lon, altitude_km=alt_km,
                 speed_ms=speed_ms, phase="boost", downrange_km=dist_km
@@ -178,8 +197,16 @@ class TrajectoryCalculator:
             dist_km = boost_range + midcourse_range * frac
 
             # Altitude: parabolic arc peaking at apogee at frac=0.5
-            arc_frac = 1.0 - (2 * frac - 1) ** 2      # 0 at ends, 1 at midpoint
-            alt_km = apogee_km * arc_frac
+            if is_cruise:
+                alt_km = apogee_km
+                # Quadratic bezier curve through the waypoint
+                t_bz = (dist_km) / total_range_km
+                lat = (1-t_bz)**2 * launch_lat + 2*(1-t_bz)*t_bz * mid_lat + t_bz**2 * target_lat
+                lon = (1-t_bz)**2 * launch_lon + 2*(1-t_bz)*t_bz * mid_lon + t_bz**2 * target_lon
+            else:
+                arc_frac = 1.0 - (2 * frac - 1) ** 2      # 0 at ends, 1 at midpoint
+                alt_km = apogee_km * arc_frac
+                lat, lon = _dest_point(launch_lat, launch_lon, bearing, dist_km)
 
             # Speed: kinetic energy + drag deceleration (simplified)
             rho = _air_density(alt_km)
@@ -211,13 +238,22 @@ class TrajectoryCalculator:
             speed_ms = min(max_speed_ms * 1.1, max_speed_ms * (0.8 + 0.3 * frac))
 
             # Guide toward exact target in terminal phase
+            if is_cruise:
+                alt_km = apogee_km * (1.0 - frac)
             term_frac = frac
-            lat = launch_lat + (target_lat - launch_lat) * (
-                (boost_range + midcourse_range + terminal_range * term_frac) / total_range_km
-            )
-            lon = launch_lon + (target_lon - launch_lon) * (
-                (boost_range + midcourse_range + terminal_range * term_frac) / total_range_km
-            )
+            
+            # Use end of bezier curve as start of terminal or just linear to target
+            if is_cruise:
+                # Approaching target
+                lat = lat + (target_lat - lat) * term_frac
+                lon = lon + (target_lon - lon) * term_frac
+            else:
+                lat = launch_lat + (target_lat - launch_lat) * (
+                    (boost_range + midcourse_range + terminal_range * term_frac) / total_range_km
+                )
+                lon = launch_lon + (target_lon - launch_lon) * (
+                    (boost_range + midcourse_range + terminal_range * term_frac) / total_range_km
+                )
 
             points.append(TrajPoint(
                 time_s=t, lat=lat, lon=lon, altitude_km=alt_km,
