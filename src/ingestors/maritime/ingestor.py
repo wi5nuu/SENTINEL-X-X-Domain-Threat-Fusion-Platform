@@ -289,9 +289,6 @@ class MaritimeDomainIngestor:
         tasks = [
             self.poll_ais_stream(),
         ]
-        # Synthetic mode only when explicitly enabled
-        if getattr(settings, 'enable_synthetic_data', False):
-            tasks.append(self.simulated_ais_generator())
         await asyncio.gather(*tasks)
 
     async def stop(self):
@@ -356,14 +353,6 @@ class MaritimeDomainIngestor:
                 metrics.errors_total.labels(service="maritime_ingestor", error_type="ais_poll").inc()
                 logger.error("AIS poll error", extra={"error": str(e)})
 
-    async def simulated_ais_generator(self):
-        """AIS simulation - only if synthetic enabled"""
-        while self.running:
-            await asyncio.sleep(2)
-            if getattr(settings, 'enable_synthetic_data', False):
-                vessel = self._create_simulated_vessel()
-                await self._process_vessel(vessel)
-
     async def _process_vessel(self, vessel: VesselTrack):
         metrics.events_ingested.labels(domain="maritime", source="ais").inc()
         self.active_vessels[vessel.mmsi] = vessel
@@ -403,48 +392,6 @@ class MaritimeDomainIngestor:
             nav_status=NavStatus(parsed.get("nav_status", "unknown")) if parsed.get("nav_status", "unknown") in [s.value for s in NavStatus] else NavStatus.unknown,
             ais_class=AISClass(parsed.get("ais_class", "A")),
         )
-
-    def _create_simulated_vessel(self) -> VesselTrack:
-        mmsi = f"{random.randint(100000000, 999999999)}"
-        vessel_type = random.choice(list(VesselType))
-        return VesselTrack(
-            mmsi=mmsi,
-            imo=f"IMO{random.randint(9000000, 9999999)}" if random.random() > 0.5 else None,
-            vessel_name=f"MV {random.choice(['SENTINEL', 'ODYSSEY', 'HORIZON', 'ARCTIC', 'PACIFIC'])}-{random.randint(1, 99)}",
-            vessel_type=vessel_type,
-            flag_state=random.choice(["USA", "PAN", "LBR", "MHL", "SGP", "HKG"]),
-            lat=random.uniform(-60, 60),
-            lon=random.uniform(-180, 180),
-            sog_knots=random.uniform(0, 25),
-            cog_deg=random.uniform(0, 360),
-            heading_deg=random.uniform(0, 360) if random.random() > 0.2 else None,
-            nav_status=random.choice(list(NavStatus)),
-            destination=random.choice(["Singapore", "Shanghai", "Rotterdam", "New York", None]),
-            draught_m=random.uniform(3, 18) if random.random() > 0.3 else None,
-            cargo_hazmat_class=random.choice(["1", "2.1", "3", "4.1", None, None]),
-            ais_class=random.choice(["A", "B"]),
-        )
-
-    def _generate_nmea_samples(self, count: int) -> list:
-        samples = []
-        for _ in range(count):
-            mmsi = random.randint(200000000, 999999999)
-            lat = random.uniform(-60, 60)
-            lon = random.uniform(-180, 180)
-            sog = random.randint(0, 300)
-            cog = random.randint(0, 3600)
-            heading = random.randint(0, 511)
-            nav_status = random.randint(0, 7)
-            lat_min = int(abs(lat) * 60000)
-            lon_min = int(abs(lon) * 60000)
-            lat_enc = lat_min + (0 if lat >= 0 else (1 << 27))
-            lon_enc = lon_min + (0 if lon >= 0 else (1 << 28))
-            payload = AISParser._encode_ais_payload(1, mmsi, nav_status, sog, lon_enc, lat_enc, cog, heading)
-            samples.append(payload)
-        return samples
-
-
-
 
 class MarineTrafficAPIAdapter:
     def __init__(self):
