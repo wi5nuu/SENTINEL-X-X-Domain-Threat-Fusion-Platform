@@ -1,4 +1,6 @@
 import json
+import yaml
+from pathlib import Path
 from datetime import datetime, timedelta
 from typing import Optional, List
 import networkx as nx
@@ -7,10 +9,6 @@ from src.common.logging import setup_logging
 from src.common.models import ThreatLevel, CompoundThreat
 
 logger = setup_logging("correlation-engine")
-
-import yaml
-from pathlib import Path
-
 # Load compound patterns from backend yaml config
 _rules_path = Path(__file__).parent.parent.parent / "data" / "threat_intel" / "correlation_rules.yaml"
 try:

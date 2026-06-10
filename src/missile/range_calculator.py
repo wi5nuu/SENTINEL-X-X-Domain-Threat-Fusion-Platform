@@ -12,13 +12,11 @@ as a sphere of radius 6371 km. Polygons are returned as lists of
 from __future__ import annotations
 
 import math
+import yaml
+from pathlib import Path
 from typing import List, Tuple
 
 R_EARTH_KM = 6371.0
-
-import yaml
-from pathlib import Path
-
 # Load country centroids from backend yaml config
 _osint_config_path = Path(__file__).parent.parent.parent / "data" / "missile_intel" / "osint_config.yaml"
 try:
