@@ -1,0 +1,80 @@
+# SENTINEL-X Threat Intelligence & Correlation Rules
+# ===================================================
+
+compound_patterns:
+  Maritime Deception Stack:
+    threat_score: 75
+    threat_class: elevated
+    conditions:
+      - domain: maritime
+        flag: dark_vessel_suspect
+        time_window_minutes: 30
+      - domain: rf
+        freq_range_mhz: [156, 174]
+      - domain: air
+        min_tracks: 1
+        max_distance_nm: 50
+
+  Infrastructure Attack Precursor:
+    threat_score: 85
+    threat_class: critical
+    conditions:
+      - domain: rf
+        type: gps_jamming
+      - domain: cyber
+        target_sector: power_grid
+        time_window_hours: 1
+      - domain: maritime
+        flag: loitering
+        near_infrastructure: true
+
+  Pre-Launch Warning:
+    threat_score: 95
+    threat_class: catastrophic
+    conditions:
+      - domain: air
+        min_unidentified: 2
+      - domain: rf
+        type: abnormal_radar
+      - domain: cyber
+        type: comms_blackout
+
+threat_matrix:
+  informational:
+    color: "#6B7280"
+    auto_action: ["log_to_database"]
+    operator_notify: false
+    sla_response_minutes: null
+    escalation_trigger: "5_same_type_in_1h"
+  suspicious:
+    color: "#F59E0B"
+    auto_action: ["log", "notify_operator_websocket"]
+    operator_notify: true
+    sla_response_minutes: 30
+    escalation_trigger: "unacknowledged_15min OR compound_with_other_domain"
+  elevated:
+    color: "#EF4444"
+    auto_action: ["log", "notify_all_operators", "begin_recording_all_feeds"]
+    operator_notify: true
+    mandatory_review: true
+    sla_response_minutes: 10
+    escalation_trigger: "unacknowledged_5min OR threat_score_increases"
+  critical:
+    color: "#DC2626"
+    auto_action: ["log_blockchain", "broadcast_all_channels", "activate_playbook"]
+    external_notification: ["command_center_api", "sms_duty_officer"]
+    sla_response_minutes: 3
+    requires_two_operator_confirm: true
+  catastrophic:
+    color: "#7F1D1D"
+    auto_action: ["log_blockchain_immediate", "full_emergency_protocol", "activate_all_playbooks", "external_api_push", "siren_stub"]
+    external_notification: ["ALL_CHANNELS"]
+    sla_response_minutes: 1
+    cannot_be_suppressed: true
+    auto_escalate_external: true
+
+squawk_severity:
+  "7500": catastrophic
+  "7600": elevated
+  "7700": critical
+  "7777": critical

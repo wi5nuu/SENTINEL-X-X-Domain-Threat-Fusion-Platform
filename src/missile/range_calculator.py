@@ -16,19 +16,20 @@ from typing import List, Tuple
 
 R_EARTH_KM = 6371.0
 
-# ISO 3166-1 alpha-3 centroids (approximate) for coverage intersection checks
-COUNTRY_CENTROIDS = {
-    "USA": (38.89, -77.03), "RUS": (61.52, 105.31), "CHN": (35.86, 104.19),
-    "PRK": (40.34, 127.51), "IRN": (32.43, 53.68), "IND": (20.59, 78.96),
-    "PAK": (30.37, 69.34), "ISR": (31.05, 34.85), "GBR": (55.37, -3.43),
-    "FRA": (46.23, 2.21), "DEU": (51.16, 10.45), "JPN": (36.20, 138.25),
-    "KOR": (35.91, 127.76), "AUS": (-25.27, 133.77), "SAU": (23.88, 45.08),
-    "TUR": (38.96, 35.24), "UKR": (48.37, 31.16), "POL": (51.91, 19.14),
-    "IDN": (-0.78, 113.92), "BRA": (-14.23, -51.92), "EGY": (26.82, 30.80),
-    "YEM": (15.55, 48.52), "SYR": (34.80, 38.99), "IRQ": (33.22, 43.67),
-    "AFG": (33.93, 67.71), "UZB": (41.37, 64.58), "KAZ": (48.01, 66.92),
-    "ARE": (23.42, 53.84), "QAT": (25.35, 51.18), "KWT": (29.31, 47.48),
-}
+import yaml
+from pathlib import Path
+
+# Load country centroids from backend yaml config
+_osint_config_path = Path(__file__).parent.parent.parent / "data" / "missile_intel" / "osint_config.yaml"
+try:
+    with open(_osint_config_path, "r", encoding="utf-8") as _f:
+        _osint_config = yaml.safe_load(_f)
+        _raw_centroids = _osint_config.get("country_centroids", {})
+        COUNTRY_CENTROIDS = {k: tuple(v) for k, v in _raw_centroids.items()}
+except Exception as e:
+    import logging
+    logging.getLogger("range-calculator").error(f"Failed to load osint_config.yaml for centroids: {e}")
+    COUNTRY_CENTROIDS = {}
 
 
 def _dest_point(lat: float, lon: float, bearing_deg: float, dist_km: float) -> Tuple[float, float]:

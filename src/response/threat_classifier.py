@@ -2,53 +2,29 @@ from datetime import datetime, timedelta
 from typing import Optional, List, Dict
 from src.common.models import ThreatLevel
 
-THREAT_MATRIX = {
-    ThreatLevel.informational: {
-        "color": "#6B7280",
-        "auto_action": ["log_to_database"],
-        "operator_notify": False,
-        "sla_response_minutes": None,
-        "escalation_trigger": "5_same_type_in_1h",
-    },
-    ThreatLevel.suspicious: {
-        "color": "#F59E0B",
-        "auto_action": ["log", "notify_operator_websocket"],
-        "operator_notify": True,
-        "sla_response_minutes": 30,
-        "escalation_trigger": "unacknowledged_15min OR compound_with_other_domain",
-    },
-    ThreatLevel.elevated: {
-        "color": "#EF4444",
-        "auto_action": ["log", "notify_all_operators", "begin_recording_all_feeds"],
-        "operator_notify": True,
-        "mandatory_review": True,
-        "sla_response_minutes": 10,
-        "escalation_trigger": "unacknowledged_5min OR threat_score_increases",
-    },
-    ThreatLevel.critical: {
-        "color": "#DC2626",
-        "auto_action": ["log_blockchain", "broadcast_all_channels", "activate_playbook"],
-        "external_notification": ["command_center_api", "sms_duty_officer"],
-        "sla_response_minutes": 3,
-        "requires_two_operator_confirm": True,
-    },
-    ThreatLevel.catastrophic: {
-        "color": "#7F1D1D",
-        "auto_action": ["log_blockchain_immediate", "full_emergency_protocol",
-                        "activate_all_playbooks", "external_api_push", "siren_stub"],
-        "external_notification": ["ALL_CHANNELS"],
-        "sla_response_minutes": 1,
-        "cannot_be_suppressed": True,
-        "auto_escalate_external": True,
-    },
-}
+import yaml
+from pathlib import Path
+from src.common.logging import setup_logging
 
-SQUAWK_SEVERITY = {
-    "7500": ThreatLevel.catastrophic,
-    "7600": ThreatLevel.elevated,
-    "7700": ThreatLevel.critical,
-    "7777": ThreatLevel.critical,
-}
+logger = setup_logging("threat-classifier")
+
+_rules_path = Path(__file__).parent.parent.parent / "data" / "threat_intel" / "correlation_rules.yaml"
+try:
+    with open(_rules_path, "r", encoding="utf-8") as _f:
+        _rules = yaml.safe_load(_f)
+        _raw_matrix = _rules.get("threat_matrix", {})
+        THREAT_MATRIX = {}
+        for k, v in _raw_matrix.items():
+            THREAT_MATRIX[ThreatLevel(k)] = v
+        
+        _raw_squawk = _rules.get("squawk_severity", {})
+        SQUAWK_SEVERITY = {}
+        for k, v in _raw_squawk.items():
+            SQUAWK_SEVERITY[str(k)] = ThreatLevel(v)
+except Exception as e:
+    logger.error(f"Failed to load correlation_rules.yaml in classifier: {e}")
+    THREAT_MATRIX = {}
+    SQUAWK_SEVERITY = {}
 
 
 class ThreatClassifier:

@@ -8,35 +8,29 @@ from src.common.models import ThreatLevel, CompoundThreat
 
 logger = setup_logging("correlation-engine")
 
-COMPOUND_PATTERNS = {
-    "Maritime Deception Stack": {
-        "threat_score": 75,
-        "threat_class": ThreatLevel.elevated,
-        "conditions": [
-            {"domain": "maritime", "flag": "dark_vessel_suspect", "time_window_minutes": 30},
-            {"domain": "rf", "freq_range_mhz": (156, 174)},
-            {"domain": "air", "min_tracks": 1, "max_distance_nm": 50},
-        ],
-    },
-    "Infrastructure Attack Precursor": {
-        "threat_score": 85,
-        "threat_class": ThreatLevel.critical,
-        "conditions": [
-            {"domain": "rf", "type": "gps_jamming"},
-            {"domain": "cyber", "target_sector": "power_grid", "time_window_hours": 1},
-            {"domain": "maritime", "flag": "loitering", "near_infrastructure": True},
-        ],
-    },
-    "Pre-Launch Warning": {
-        "threat_score": 95,
-        "threat_class": ThreatLevel.catastrophic,
-        "conditions": [
-            {"domain": "air", "min_unidentified": 2},
-            {"domain": "rf", "type": "abnormal_radar"},
-            {"domain": "cyber", "type": "comms_blackout"},
-        ],
-    },
-}
+import yaml
+from pathlib import Path
+
+# Load compound patterns from backend yaml config
+_rules_path = Path(__file__).parent.parent.parent / "data" / "threat_intel" / "correlation_rules.yaml"
+try:
+    with open(_rules_path, "r", encoding="utf-8") as _f:
+        _rules = yaml.safe_load(_f)
+        _raw_patterns = _rules.get("compound_patterns", {})
+        COMPOUND_PATTERNS = {}
+        for name, data in _raw_patterns.items():
+            COMPOUND_PATTERNS[name] = {
+                "threat_score": data.get("threat_score"),
+                "threat_class": ThreatLevel(data.get("threat_class", "informational")),
+                "conditions": data.get("conditions", [])
+            }
+            # Convert arrays back to tuples for freq_range_mhz if present
+            for cond in COMPOUND_PATTERNS[name]["conditions"]:
+                if "freq_range_mhz" in cond and isinstance(cond["freq_range_mhz"], list):
+                    cond["freq_range_mhz"] = tuple(cond["freq_range_mhz"])
+except Exception as e:
+    logger.error(f"Failed to load correlation_rules.yaml: {e}")
+    COMPOUND_PATTERNS = {}
 
 
 class DarkPatternCorrelationEngine:

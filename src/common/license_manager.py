@@ -82,7 +82,7 @@ class ConfigValidator:
         
         if missing_keys:
             self.warnings.append(f"Missing optional API keys: {', '.join(missing_keys)}")
-            print(f"\n⚠️  WARNING: Missing optional API keys:")
+            print("\n⚠️  WARNING: Missing optional API keys:")
             for key in missing_keys:
                 print(f"   - {key}")
             print("   Platform will run with limited data sources.")
