@@ -26,6 +26,14 @@ from src.ai_engine.analyst import analyst
 from src.intelligence.manager import intelligence_manager
 from src.intelligence.modules import CBRNWatch, DarkFleetTracker
 from src.common.telemetry import setup_telemetry
+from src.common.middleware import (
+    RateLimitMiddleware,
+    SecurityHeadersMiddleware,
+    RequestIDMiddleware,
+    InputValidationMiddleware,
+    AuditLogMiddleware,
+    AuthenticationMiddleware,
+)
 
 intelligence_manager.register_module(CBRNWatch())
 intelligence_manager.register_module(DarkFleetTracker())
@@ -197,13 +205,21 @@ app = FastAPI(
     lifespan=lifespan,
 )
 
+cors_origins = settings.cors_origins.split(",") if settings.cors_origins else ["http://localhost:3000"]
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=cors_origins,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+app.add_middleware(RateLimitMiddleware, max_requests=settings.max_api_rate_limit, window_seconds=60)
+app.add_middleware(SecurityHeadersMiddleware)
+app.add_middleware(RequestIDMiddleware)
+app.add_middleware(InputValidationMiddleware)
+app.add_middleware(AuditLogMiddleware)
+app.add_middleware(AuthenticationMiddleware)
 
 setup_telemetry(app, "sentinel-api")
 
@@ -383,10 +399,13 @@ async def test_alert():
 
 @app.get("/api/v1/reports/download/{filename}")
 async def download_report(filename: str):
-    filepath = os.path.join("reports", filename)
+    if ".." in filename or "/" in filename or "\\" in filename or not filename.endswith(".pdf"):
+        raise HTTPException(status_code=400, detail="Invalid filename")
+    safe_name = os.path.basename(filename)
+    filepath = os.path.join("reports", safe_name)
     if not os.path.exists(filepath):
         raise HTTPException(status_code=404, detail="Report not found")
-    return FileResponse(filepath, media_type="application/pdf", filename=filename)
+    return FileResponse(filepath, media_type="application/pdf", filename=safe_name)
 
 
 @app.post("/api/v1/actions/playbook_test")

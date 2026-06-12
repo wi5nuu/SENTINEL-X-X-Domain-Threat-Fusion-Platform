@@ -19,9 +19,9 @@ services:
     environment:
       POSTGRES_DB: sentinel
       POSTGRES_USER: sentinel
-      POSTGRES_PASSWORD: ${DATABASE_PASSWORD:-sentinel_pass}
+      POSTGRES_PASSWORD: ${DATABASE_PASSWORD:?DATABASE_PASSWORD is required}
     ports:
-      - "5432:5432"
+      - "127.0.0.1:5432:5432"
     volumes:
       - postgres_data:/home/postgres/pgdata
       - ./docker/init/postgres-init.sql:/docker-entrypoint-initdb.d/postgres-init.sql:ro
@@ -34,7 +34,7 @@ services:
     image: redis:7-alpine
     container_name: sentinel-redis
     ports:
-      - "6379:6379"
+      - "127.0.0.1:6379:6379"
     volumes:
       - redis_data:/data
     command: redis-server --appendonly yes --save 60 1000
@@ -48,10 +48,11 @@ services:
     container_name: sentinel-elasticsearch
     environment:
       - discovery.type=single-node
-      - xpack.security.enabled=false
+      - xpack.security.enabled=${ELASTICSEARCH_SECURITY_ENABLED:-false}
+      - xpack.security.transport.ssl.enabled=${ELASTICSEARCH_SSL_ENABLED:-false}
       - "ES_JAVA_OPTS=-Xms1g -Xmx1g"
     ports:
-      - "9200:9200"
+      - "127.0.0.1:9200:9200"
     volumes:
       - elasticsearch_data:/usr/share/elasticsearch/data
     logging: *default-logging
@@ -77,8 +78,8 @@ services:
       zookeeper:
         condition: service_healthy
     ports:
-      - "9092:9092"
-      - "9093:9093"
+      - "127.0.0.1:9092:9092"
+      - "127.0.0.1:9093:9093"
     environment:
       KAFKA_BROKER_ID: 1
       KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
@@ -114,7 +115,7 @@ services:
       dockerfile: docker/Dockerfile.hardhat
     container_name: sentinel-hardhat
     ports:
-      - "8545:8545"
+      - "127.0.0.1:8545:8545"
     logging: *default-logging
     healthcheck:
       interval: 30s
@@ -127,8 +128,8 @@ services:
     image: ipfs/kubo:latest
     container_name: sentinel-ipfs
     ports:
-      - "5001:5001"
-      - "8081:8080"
+      - "127.0.0.1:5001:5001"
+      - "127.0.0.1:8081:8080"
     volumes:
       - ipfs_data:/data/ipfs
     logging: *default-logging
@@ -142,7 +143,7 @@ services:
       dockerfile: docker/Dockerfile.api
     container_name: sentinel-api
     ports:
-      - "8000:8000"
+      - "127.0.0.1:8000:8000"
     depends_on:
       postgres:
         condition: service_healthy
@@ -290,7 +291,7 @@ services:
       dockerfile: docker/Dockerfile.frontend
     container_name: sentinel-frontend
     ports:
-      - "3000:3000"
+      - "127.0.0.1:3000:3000"
     depends_on:
       - sentinel-api
     env_file: .env
@@ -302,7 +303,7 @@ services:
       dockerfile: Dockerfile.prometheus
     container_name: sentinel-prometheus
     ports:
-      - "9090:9090"
+      - "127.0.0.1:9090:9090"
     volumes:
       - prometheus_data:/prometheus
     command:
@@ -314,9 +315,9 @@ services:
     image: grafana/grafana:10.4.0
     container_name: sentinel-grafana
     ports:
-      - "3001:3000"
+      - "127.0.0.1:3001:3000"
     environment:
-      - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_PASSWORD:-sentinel_admin}
+      - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_PASSWORD:?GRAFANA_PASSWORD is required}
       - GF_INSTALL_PLUGINS=grafana-piechart-panel
       - GF_SERVER_ROOT_URL=http://localhost/grafana/
       - GF_SERVER_SERVE_FROM_SUB_PATH=true
@@ -330,9 +331,9 @@ services:
     image: jaegertracing/all-in-one:1.57
     container_name: sentinel-jaeger
     ports:
-      - "16686:16686"
-      - "4317:4317"
-      - "4318:4318"
+      - "127.0.0.1:16686:16686"
+      - "127.0.0.1:4317:4317"
+      - "127.0.0.1:4318:4318"
     environment:
       - COLLECTOR_OTLP_ENABLED=true
     command:

@@ -3,14 +3,14 @@ from typing import Optional
 
 
 class Settings(BaseSettings):
-    database_url: str = "postgresql+asyncpg://sentinel:sentinel_pass@postgres:5432/sentinel"
+    database_url: str = "postgresql+asyncpg://sentinel:${DATABASE_PASSWORD}@postgres:5432/sentinel"
     redis_url: str = "redis://redis:6379/0"
     kafka_bootstrap_servers: str = "kafka:9092"
     elasticsearch_url: str = "http://elasticsearch:9200"
     ethereum_rpc_url: str = "http://hardhat-node:8545"
     ethereum_private_key: Optional[str] = None
     ipfs_rpc_url: str = "http://ipfs:5001"
-    jwt_secret_key: str = "change-me-to-a-secure-random-string"
+    jwt_secret_key: str
     
     # Security Settings
     enable_data_encryption: bool = True
@@ -78,11 +78,17 @@ class Settings(BaseSettings):
     alert_retention_days: int = 365
     log_retention_days: int = 30
 
+    # API Security
+    sentinel_api_key: Optional[str] = None
+    cors_origins: str = "http://localhost:3000,http://localhost:5173"
+    encryption_salt: Optional[str] = None
+
     # Missile Intelligence
     acled_api_key: Optional[str] = None
+    acled_email: str = "sentinel@sentinel.local"
     acled_api_url: str = "https://api.acleddata.com/acled/read"
     missile_intel_refresh_hours: int = 6
-    enable_what_if_simulation: bool = True
+    enable_what_if_simulation: bool = False
     missile_data_path: str = "data/missile_intel"
 
     class Config:

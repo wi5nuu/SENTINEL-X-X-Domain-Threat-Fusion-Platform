@@ -27,10 +27,8 @@ export SENTINEL_GRAFANA_PASSWORD="${SENTINEL_GRAFANA_PASSWORD:-$(openssl rand -b
 export NASA_API_KEY="${NASA_API_KEY:-}"
 
 echo "=== Deploying SENTINEL-X to $VM_IP ==="
-echo "  DB Password:       $SENTINEL_DB_PASSWORD"
-echo "  JWT Secret:        ${SENTINEL_JWT_SECRET:0:16}..."
-echo "  Grafana Password:  $SENTINEL_GRAFANA_PASSWORD"
-echo "  NASA API Key:      ${NASA_API_KEY:-<not set>}"
+echo "  Secrets are securely generated (not displayed)."
+echo "  NASA API Key:      ${NASA_API_KEY:+<configured>}${NASA_API_KEY:-<not set>}"
 echo ""
 
 # Update inventory with VM IP and SSH key
@@ -44,5 +42,5 @@ ansible-playbook -i inventory.yml playbook.yml -v
 echo ""
 echo "=== Deployment complete! ==="
 echo "Access the dashboard at: http://$VM_IP"
-echo "Grafana: http://$VM_IP/grafana/ (admin / $SENTINEL_GRAFANA_PASSWORD)"
+echo "Grafana: http://$VM_IP/grafana/"
 echo "API docs: http://$VM_IP:8000/docs"

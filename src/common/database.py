@@ -218,7 +218,10 @@ class DefenseSystemDB(Base):
 
 
 def _create_hypertable(target, connection, **kw):
-    connection.execute(text(f"SELECT create_hypertable('{target.name}', 'timestamp_utc', if_not_exists => TRUE)"))
+    table_name = target.name
+    if not table_name.replace("_", "").isalnum():
+        raise ValueError(f"Invalid table name: {table_name}")
+    connection.execute(text(f"SELECT create_hypertable(:tbl, 'timestamp_utc', if_not_exists => TRUE)").bindparams(tbl=table_name))
 
 
 _models_with_hypertables = []
@@ -238,7 +241,7 @@ register_hypertable(MissileEventDB)
 async def init_db():
     async with engine.begin() as conn:
         for tbl in ("air_tracks", "vessel_tracks", "seismic_events", "missile_events"):
-            await conn.execute(text(f"DROP TABLE IF EXISTS {tbl} CASCADE"))
+            await conn.execute(text("DROP TABLE IF EXISTS :tbl CASCADE").bindparams(tbl=tbl))
         await conn.run_sync(Base.metadata.create_all)
 
 

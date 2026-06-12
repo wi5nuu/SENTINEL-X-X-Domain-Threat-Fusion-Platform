@@ -16,7 +16,7 @@ jobs:
         env:
           POSTGRES_DB: sentinel
           POSTGRES_USER: sentinel
-          POSTGRES_PASSWORD: sentinel_pass
+          POSTGRES_PASSWORD: ${{ secrets.POSTGRES_PASSWORD || 'sentinel_ci_pass' }}
         ports:
           - 5432:5432
         options: >-
@@ -47,7 +47,7 @@ jobs:
           pytest tests/unit/ -v --tb=short
         env:
           PYTHONPATH: ${{ github.workspace }}/src
-          DATABASE_URL: postgresql+asyncpg://sentinel:sentinel_pass@localhost:5432/sentinel
+          DATABASE_URL: postgresql+asyncpg://sentinel:${{ secrets.POSTGRES_PASSWORD || 'sentinel_ci_pass' }}@localhost:5432/sentinel
 
       - name: Run integration tests
         run: |

@@ -94,7 +94,7 @@
           KAFKA_BOOTSTRAP_SERVERS=kafka:9092
           ELASTICSEARCH_URL=http://elasticsearch:9200
           ETHEREUM_RPC_URL=http://hardhat-node:8545
-          ETHEREUM_PRIVATE_KEY=0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80
+          ETHEREUM_PRIVATE_KEY={{ ethereum_private_key }}
           IPFS_RPC_URL=http://ipfs:5001
           JWT_SECRET_KEY={{ jwt_secret_key }}
           GRAFANA_PASSWORD={{ grafana_password }}
@@ -283,7 +283,7 @@
           - "SENTINEL-X deployment complete!"
           - "Gateway: http://{{ ansible_default_ipv4.address }}"
           - "API: http://{{ ansible_default_ipv4.address }}:8000/docs"
-          - "Grafana: http://{{ ansible_default_ipv4.address }}/grafana/ (admin:{{ grafana_password }})"
+          - "Grafana: http://{{ ansible_default_ipv4.address }}/grafana/"
           - "Prometheus: http://{{ ansible_default_ipv4.address }}/prometheus/"
           - "Jaeger: http://{{ ansible_default_ipv4.address }}/jaeger/"
           - "Run 'docker compose logs -f' for real-time logs"

@@ -122,3 +122,68 @@ fixtures/production/
 .setup_complete
 
 data/missile_intel/
+
+# Security audit reports
+security-audit/
+security-reports/
+*.security.log
+
+# Git history backups
+git-filter-repo/
+*.backup_commit/
+*.backup_branch/
+
+# CI/CD artifacts
+.gitleaks/
+.semgrep/
+tfsec/
+checkov/
+trivy-scans/
+
+# SSH keys and access credentials
+id_rsa*
+id_dsa*
+id_ecdsa*
+id_ed25519*
+known_hosts
+authorized_keys
+*.p12
+*.jks
+*.keystore
+*.truststore
+
+# Cloud provider credentials
+aws-credentials/
+gcloud-credentials/
+azure-credentials/
+.aws/
+.gcloud/
+.azure/
+
+# Docker credentials
+.dockercfg
+.docker/config.json
+
+# Kubernetes
+.kube/
+kubeconfig*
+*.kubeconfig
+
+# Helm secrets
+charts/**/secrets/
+secrets.yaml
+*.secrets.yaml
+
+# SAML / OAuth / Okta
+saml/
+oauth/
+okta/
+firebase/
+auth0/
+
+# Temporary debug files
+*.debug*
+*.trace*
+*.dump*
+core.*
+memory.dmp

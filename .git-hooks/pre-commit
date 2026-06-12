@@ -1,15 +1,24 @@
 #!/bin/bash
-# Pre-commit hook to prevent sensitive files from being committed
+set -euo pipefail
 
 RED='\033[0;31m'
+GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
+CYAN='\033[0;36m'
 NC='\033[0m'
 
-echo "Running pre-commit security checks..."
+echo -e "${CYAN}╔══════════════════════════════════════════╗${NC}"
+echo -e "${CYAN}║     SENTINEL-X Pre-Commit Security Scan  ║${NC}"
+echo -e "${CYAN}╚══════════════════════════════════════════╝${NC}"
+echo ""
 
-# List of patterns that should NEVER be committed
-SENSITIVE_PATTERNS=(
+HAS_ERRORS=0
+HAS_WARNINGS=0
+
+SENSITIVE_FILE_PATTERNS=(
     "\.env$"
+    "\.env\.local$"
+    "\.env\..*\.local$"
     "\.license$"
     "\.license\.enc$"
     "license\.key$"
@@ -28,82 +37,176 @@ SENSITIVE_PATTERNS=(
     "private_keys/"
     "credentials/"
     "\.credentials/"
-    "src/common/license_manager\.py$"
-    "src/common/hardware_fingerprint\.py$"
-    "setup/generate_license\.py$"
-    "setup/install_private\.sh$"
-    "\.db$"
-    "\.sqlite$"
+    "id_rsa$"
+    "id_dsa$"
+    "id_ecdsa$"
+    "id_ed25519$"
+    "known_hosts$"
+    "authorized_keys$"
+    "secrets/"
+    "\.secret/"
+    "vault/"
+    "kubeconfig$"
+    "\.kube/config$"
+    "tls\.crt$"
+    "tls\.key$"
+    "ca\.crt$"
+    "ca\.key$"
+    "client\.crt$"
+    "client\.key$"
+    "server\.crt$"
+    "server\.key$"
+    "keystore/"
+    "truststore/"
+    "saml/"
+    "oauth/"
+    "okta/"
+    "firebase/"
+    "google-credentials/"
+    "aws-credentials/"
+    ".npmrc$"
+    ".dockercfg$"
+    ".docker/config.json$"
 )
 
-# List of content patterns that should never appear in code
-FORBIDDEN_CONTENT=(
+FORBIDDEN_CONTENT_PATTERNS=(
     "BEGIN PRIVATE KEY"
     "BEGIN RSA PRIVATE KEY"
-    "api_key\s*=\s*['\"][a-zA-Z0-9]{20,}['\"]"
-    "password\s*=\s*['\"][^'\"]{8,}['\"]"
-    "secret\s*=\s*['\"][a-zA-Z0-9]{20,}['\"]"
-    "token\s*=\s*['\"][a-zA-Z0-9]{20,}['\"]"
+    "BEGIN DSA PRIVATE KEY"
+    "BEGIN EC PRIVATE KEY"
+    "BEGIN OPENSSH PRIVATE KEY"
+    "BEGIN PGP PRIVATE KEY"
+    "api_key\s*[=:]\s*['\"][a-zA-Z0-9_\-]{20,}['\"]"
+    "apikey\s*[=:]\s*['\"][a-zA-Z0-9_\-]{20,}['\"]"
+    "api\.key\s*[=:]\s*['\"][a-zA-Z0-9_\-]{20,}['\"]"
+    "password\s*[=:]\s*['\"'][^'\"]{8,}['\"]"
+    "passwd\s*[=:]\s*['\"'][^'\"]{8,}['\"]"
+    "pwd\s*[=:]\s*['\"'][^'\"]{8,}['\"]"
+    "secret\s*[=:]\s*['\"'][a-zA-Z0-9_\-]{20,}['\"]"
+    "token\s*[=:]\s*['\"'][a-zA-Z0-9_\-]{20,}['\"]"
+    "jwt\s*[=:]\s*['\"'][a-zA-Z0-9_\-]{20,}['\"]"
+    "secret_key\s*[=:]\s*['\"'][a-zA-Z0-9_\-]{16,}['\"]"
+    "private_key\s*[=:]\s*['\"'][a-zA-Z0-9_\-]{16,}['\"]"
+    "access_key\s*[=:]\s*['\"'][a-zA-Z0-9_\-]{16,}['\"]"
+    "secret_access_key\s*[=:]\s*['\"'][a-zA-Z0-9_\-]{16,}['\"]"
+    "connection_string\s*[=:]\s*['\"'][^'\"]+['\"]"
+    "AKIA[0-9A-Z]{16}"
+    "ghp_[a-zA-Z0-9]{36}"
+    "gho_[a-zA-Z0-9]{36}"
+    "ghu_[a-zA-Z0-9]{36}"
+    "ghs_[a-zA-Z0-9]{36}"
+    "ghr_[a-zA-Z0-9]{36}"
+    "xox[baprs]-[0-9a-zA-Z\-]{20,}"
+    "sk_live_[0-9a-zA-Z]{20,}"
+    "pk_live_[0-9a-zA-Z]{20,}"
+    "rk_live_[0-9a-zA-Z]{20,}"
+    "AC[a-zA-Z0-9_\-]{32}"
+    "AIza[0-9A-Za-z\-_]{35}"
+    "SG\.[a-zA-Z0-9_\-]{22}\.[a-zA-Z0-9_\-]{43}"
+    "EAAC[a-zA-Z0-9]{80,}"
+    "key-[0-9a-zA-Z]{32}"
+    "-----BEGIN .* PRIVATE KEY-----"
 )
 
+echo -e "${CYAN}[1/4] Checking staged file names...${NC}"
 BLOCKED_FILES=()
-BLOCKED_CONTENT=()
-
-# Check staged files
-for file in $(git diff --cached --name-only); do
-    # Check file patterns
-    for pattern in "${SENSITIVE_PATTERNS[@]}"; do
-        if echo "$file" | grep -qE "$pattern"; then
+for file in $(git diff --cached --name-only 2>/dev/null || true); do
+    for pattern in "${SENSITIVE_FILE_PATTERNS[@]}"; do
+        if echo "$file" | grep -qiE "$pattern" 2>/dev/null; then
             BLOCKED_FILES+=("$file")
             break
         fi
     done
-    
-    # Check file content (only for text files)
-    if [ -f "$file" ]; then
-        for pattern in "${FORBIDDEN_CONTENT[@]}"; do
-            if grep -qiE "$pattern" "$file" 2>/dev/null; then
-                BLOCKED_CONTENT+=("$file: matches pattern '$pattern'")
+done
+
+if [ ${#BLOCKED_FILES[@]} -gt 0 ]; then
+    echo -e "${RED}✗ BLOCKED: Sensitive file patterns detected:${NC}"
+    for f in "${BLOCKED_FILES[@]}"; do
+        echo -e "  ${RED}●${NC} $f"
+    done
+    echo ""
+    HAS_ERRORS=1
+else
+    echo -e "${GREEN}✓ No sensitive file patterns found${NC}"
+fi
+
+echo -e "${CYAN}[2/4] Checking staged file content for secrets...${NC}"
+BLOCKED_CONTENT=()
+for file in $(git diff --cached --name-only 2>/dev/null || true); do
+    if [ -f "$file" ] && file "$file" | grep -qiE "text|script|source|json|yaml|xml|config" 2>/dev/null; then
+        for pattern in "${FORBIDDEN_CONTENT_PATTERNS[@]}"; do
+            if grep -qEi "$pattern" "$file" 2>/dev/null; then
+                BLOCKED_CONTENT+=("$file")
+                echo -e "  ${RED}●${NC} $file: contains potential secret"
+                break
             fi
         done
     fi
 done
 
-# Report blocked files
-if [ ${#BLOCKED_FILES[@]} -gt 0 ]; then
-    echo -e "${RED}ERROR: Attempting to commit sensitive files!${NC}"
-    echo ""
-    echo "The following files should NOT be committed:"
-    for file in "${BLOCKED_FILES[@]}"; do
-        echo -e "  ${RED}✗${NC} $file"
-    done
-    echo ""
-    echo "These files contain sensitive data or proprietary code."
-    echo "Add them to .gitignore if not already present."
-    echo ""
-    exit 1
-fi
-
-# Report blocked content
 if [ ${#BLOCKED_CONTENT[@]} -gt 0 ]; then
-    echo -e "${RED}ERROR: Sensitive content detected in staged files!${NC}"
-    echo ""
-    echo "The following files contain sensitive data:"
-    for item in "${BLOCKED_CONTENT[@]}"; do
-        echo -e "  ${RED}✗${NC} $item"
+    echo -e "${RED}✗ BLOCKED: ${#BLOCKED_CONTENT[@]} file(s) contain potential secrets${NC}"
+    HAS_ERRORS=1
+else
+    echo -e "${GREEN}✓ No secrets found in staged content${NC}"
+fi
+
+echo -e "${CYAN}[3/4] Checking for large files (>5MB)...${NC}"
+LARGE_FILES=()
+for file in $(git diff --cached --name-only 2>/dev/null || true); do
+    if [ -f "$file" ]; then
+        SIZE=$(stat -f%z "$file" 2>/dev/null || stat -c%s "$file" 2>/dev/null || echo 0)
+        if [ "$SIZE" -gt 5242880 ] 2>/dev/null; then
+            LARGE_FILES+=("$file ($(numfmt --to=iec $SIZE 2>/dev/null || echo large))")
+        fi
+    fi
+done
+
+if [ ${#LARGE_FILES[@]} -gt 0 ]; then
+    echo -e "${YELLOW}⚠ WARNING: Large files detected:${NC}"
+    for f in "${LARGE_FILES[@]}"; do
+        echo -e "  ${YELLOW}●${NC} $f"
     done
-    echo ""
-    echo "Remove sensitive data before committing."
-    echo "Use environment variables or secure vaults for secrets."
-    echo ""
+    HAS_WARNINGS=1
+else
+    echo -e "${GREEN}✓ No large files found${NC}"
+fi
+
+echo -e "${CYAN}[4/4] Checking for debug/accidental changes...${NC}"
+DEBUG_PATTERNS=("print(" "console.log" "debugger" "TODO" "FIXME" "XXX" "HACK" "temp" "testing-")
+DEBUG_FOUND=()
+for file in $(git diff --cached --name-only 2>/dev/null || true); do
+    if [ -f "$file" ] && file "$file" | grep -qiE "text|script|source|json|yaml" 2>/dev/null; then
+        for pattern in "${DEBUG_PATTERNS[@]}"; do
+            if grep -q "$pattern" "$file" 2>/dev/null; then
+                DEBUG_FOUND+=("$file: $pattern")
+                break
+            fi
+        done
+    fi
+done
+
+if [ ${#DEBUG_FOUND[@]} -gt 0 ]; then
+    echo -e "${YELLOW}⚠ DEBUG/TODO patterns found (may be intentional):${NC}"
+    for d in "${DEBUG_FOUND[@]}"; do
+        echo -e "  ${YELLOW}●${NC} $d" | head -10
+    done
+    HAS_WARNINGS=1
+else
+    echo -e "${GREEN}✓ No debug patterns found${NC}"
+fi
+
+echo ""
+echo -e "${CYAN}═══════════════════════════════════════════${NC}"
+if [ $HAS_ERRORS -gt 0 ]; then
+    echo -e "${RED}✋ COMMIT BLOCKED: Fix security issues before committing.${NC}"
+    echo -e "  Use .gitignore to exclude sensitive files."
+    echo -e "  Use environment variables or vaults for secrets."
     exit 1
+elif [ $HAS_WARNINGS -gt 0 ]; then
+    echo -e "${YELLOW}⚠ Commit allowed with warnings. Review flagged items.${NC}"
+    exit 0
+else
+    echo -e "${GREEN}✓ All security checks passed. Proceeding with commit.${NC}"
+    exit 0
 fi
-
-# Check for common mistakes
-if git diff --cached --name-only | grep -qE "\.env\."; then
-    echo -e "${YELLOW}WARNING: Committing .env.* file${NC}"
-    echo "Make sure this is .env.example and not actual credentials!"
-fi
-
-echo -e "${GREEN}✓ Security checks passed${NC}"
-exit 0

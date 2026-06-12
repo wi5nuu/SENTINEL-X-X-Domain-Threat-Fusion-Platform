@@ -401,7 +401,7 @@ class OSINTCollector:
             # ACLED API: explosion/remote violence events with missile keywords
             params = {
                 "key": settings.acled_api_key,
-                "email": "sentinel@sentinel.local",
+                "email": settings.acled_email,
                 "event_type": "Explosions/Remote violence",
                 "sub_event_type": "Air/drone strike,Shelling/artillery/missile attack",
                 "limit": 100,

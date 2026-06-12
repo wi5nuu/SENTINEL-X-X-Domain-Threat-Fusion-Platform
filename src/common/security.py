@@ -9,6 +9,7 @@ import hashlib
 import hmac
 import secrets
 import time
+import base64
 from datetime import datetime, timedelta
 from typing import Optional, Dict, Any
 from cryptography.fernet import Fernet
@@ -35,16 +36,16 @@ class SecurityManager:
     def _init_encryption(self):
         """Initialize encryption cipher with derived key"""
         try:
-            # Derive encryption key from JWT secret
+            salt = settings.encryption_salt.encode() if hasattr(settings, 'encryption_salt') and settings.encryption_salt else secrets.token_bytes(16)
             kdf = PBKDF2(
                 algorithm=hashes.SHA256(),
                 length=32,
-                salt=b'sentinel_salt_2024',
-                iterations=100000,
+                salt=salt,
+                iterations=600000,
                 backend=default_backend()
             )
-            key = kdf.derive(settings.jwt_secret_key.encode())
-            self._cipher = Fernet(Fernet.generate_key())
+            key = base64.urlsafe_b64encode(kdf.derive(settings.jwt_secret_key.encode()))
+            self._cipher = Fernet(key)
             logger.info("Encryption initialized successfully")
         except Exception as e:
             logger.error(f"Failed to initialize encryption: {e}")
