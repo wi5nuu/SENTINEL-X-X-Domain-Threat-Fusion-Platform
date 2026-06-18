@@ -12,7 +12,7 @@
   [![Blockchain](https://img.shields.io/badge/Blockchain-Ethereum%20%7C%20IPFS-3C3C3D?logo=ethereum&logoColor=white)](https://ethereum.org/)
   [![Docker](https://img.shields.io/badge/Deployment-Docker%20Compose-2496ED?logo=docker&logoColor=white)](https://www.docker.com/)
 
-  > **PENTING: Ini adalah proyek simulasi dan proof-of-concept yang dikembangkan untuk tujuan edukasi, research, dan demonstrasi konsep. Bukan sistem operasional untuk deployment production.**
+  > **PENTING**: SENTINEL-X adalah **Proof of Concept (PoC)** yang mengintegrasikan **data real-time** dari berbagai sumber publik untuk demonstrasi konsep threat intelligence dan situational awareness multi-domain. Proyek ini dikembangkan untuk tujuan **edukasi, research, dan demonstrasi** — **bukan untuk deployment production**.
   
   *Platform demonstrasi untuk kesadaran situasional, korelasi berbasis AI, dan respons insiden otomatis.*
 </div>
@@ -21,7 +21,7 @@
 
 ## Tentang Proyek
 
-**SENTINEL-X** adalah **proof-of-concept platform** yang dikembangkan sebagai simulasi dan demonstrasi konsep untuk sistem threat intelligence dan monitoring multi-domain. Proyek ini berawal dari **ide** untuk membuat platform yang bisa mengintegrasikan berbagai sumber data untuk situational awareness.
+**SENTINEL-X** adalah proof-of-concept platform yang mengintegrasikan berbagai sumber **data real-time** untuk sistem threat intelligence dan monitoring multi-domain. Proyek ini berawal dari ide untuk membuat platform yang bisa menggabungkan data dari berbagai domain untuk meningkatkan situational awareness.
 
 ### Status Proyek:
 - **Educational Purpose**: Dibuat untuk pembelajaran dan demonstrasi konsep
@@ -107,15 +107,18 @@ Mengagregasi dan menormalisasi inteligensi mentah dari 6 domain utama secara mul
 
 ## Sumber Data Real-Time
 
-SENTINEL-X mengintegrasikan data real-time dari berbagai sumber publik dan threat intelligence feeds untuk memberikan situational awareness yang komprehensif:
+SENTINEL-X mengintegrasikan **data real-time** dari berbagai sumber publik dan threat intelligence feeds untuk memberikan situational awareness yang komprehensif dalam lingkup demonstrasi dan research.
 
 ### Data Real-Time yang Terintegrasi:
+
 - **Aviation Domain**: Data penerbangan komersial dan sipil dari sumber data ADS-B publik (OpenSky Network). Dapat ditingkatkan dengan FlightAware AeroAPI untuk detail penerbangan yang lebih akurat termasuk routes, waypoints, delays, dan aircraft type information.
-- **Space Weather & Natural Events**: Integrasi dengan NASA untuk pemantauan aktivitas matahari, badai geomagnetik, dan kejadian alam global
-- **Cyber Threat Intelligence**: Agregasi dari multiple threat intelligence feeds untuk deteksi ancaman siber real-time
-- **Seismic Monitoring**: Data gempa bumi global dari lembaga seismologi internasional (USGS, EMSC)
-- **Maritime Domain**: Pelacakan kapal melalui AIS (Automatic Identification System)
-- **Weather Correlation**: Integrasi dengan OpenWeatherMap untuk mengkorelasikan kondisi cuaca dengan aviation dan maritime events
+- **Space Weather & Natural Events**: Integrasi dengan NASA untuk pemantauan aktivitas matahari, badai geomagnetik, dan kejadian alam global.
+- **Cyber Threat Intelligence**: Agregasi dari multiple threat intelligence feeds untuk deteksi ancaman siber real-time.
+- **Seismic Monitoring**: Data gempa bumi global dari lembaga seismologi internasional (USGS, EMSC).
+- **Maritime Domain**: Pelacakan kapal melalui AIS (Automatic Identification System).
+- **Weather Correlation**: Integrasi dengan OpenWeatherMap untuk mengkorelasikan kondisi cuaca dengan aviation dan maritime events.
+
+> **Catatan Penting**: Semua data di atas digunakan untuk keperluan demonstrasi PoC dan research. Platform ini **bukan sistem operasional produksi**, melainkan simulasi dan proof-of-concept yang memanfaatkan sumber data publik yang sah.
 
 ### Enhanced Features (Optional):
 Platform mendukung fitur-fitur tambahan untuk akurasi data yang lebih tinggi:
