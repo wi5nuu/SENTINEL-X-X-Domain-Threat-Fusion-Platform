@@ -5,6 +5,7 @@ on:
     branches: [main, develop]
   pull_request:
     branches: [main]
+  workflow_dispatch:
   schedule:
     - cron: "0 6 * * 1"
 
@@ -25,14 +26,14 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Check Python dependencies
-        uses: pypa/gh-action-pip-audit@v1.0.0
+      - uses: actions/setup-python@v5
         with:
-          inputs: requirements.txt
-      - name: Check AI dependencies
-        uses: pypa/gh-action-pip-audit@v1.0.0
-        with:
-          inputs: requirements-ai.txt
+          python-version: "3.12"
+      - name: Audit Python dependencies
+        run: |
+          pip install "pip-audit==2.9.0"
+          pip-audit -r requirements.txt --progress-spinner off
+          pip-audit -r requirements-ai.txt --progress-spinner off
       - name: Check npm dependencies
         working-directory: src/frontend
         run: |
@@ -55,17 +56,13 @@ jobs:
         uses: github/codeql-action/analyze@v3
 
   docker-scan:
-    name: Docker Image Scan
+    name: Dockerfile Lint
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Scan Dockerfile
+      - name: Lint all Dockerfiles in docker/
         uses: hadolint/hadolint-action@v3.1.0
         with:
-          dockerfile: Dockerfile
-          failure-threshold: warning
-      - name: Scan docker-compose
-        uses: hadolint/hadolint-action@v3.1.0
-        with:
-          dockerfile: docker-compose.yml
-          failure-threshold: warning
+          dockerfile: "Dockerfile*"
+          recursive: true
+          failure-threshold: error

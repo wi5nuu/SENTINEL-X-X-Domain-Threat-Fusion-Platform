@@ -14,7 +14,7 @@ from datetime import datetime, timedelta
 from typing import Optional, Dict, Any
 from cryptography.fernet import Fernet
 from cryptography.hazmat.primitives import hashes
-from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2
+from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2HMAC
 from cryptography.hazmat.backends import default_backend
 import re
 import json
@@ -37,7 +37,7 @@ class SecurityManager:
         """Initialize encryption cipher with derived key"""
         try:
             salt = settings.encryption_salt.encode() if hasattr(settings, 'encryption_salt') and settings.encryption_salt else secrets.token_bytes(16)
-            kdf = PBKDF2(
+            kdf = PBKDF2HMAC(
                 algorithm=hashes.SHA256(),
                 length=32,
                 salt=salt,

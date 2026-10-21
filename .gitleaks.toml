@@ -1,0 +1,12 @@
+# Gitleaks configuration: default rules plus documented false positives.
+[extend]
+useDefault = true
+
+[allowlist]
+description = "Public Hardhat development key and template placeholders"
+regexes = [
+  # Hardhat default account #0 private key (published in Hardhat docs, local dev chain only, holds no value)
+  '''0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80''',
+  '''CHANGE_ME[A-Z_]*''',
+  '''\{\{\s*[a-zA-Z_]+\s*\}\}''',
+]

@@ -1,6 +1,9 @@
 import pytest
-from src.ai_engine.model import ThreatFusionModel
-import torch
+
+# The AI stack (requirements-ai.txt) is optional; skip instead of failing when it is not installed.
+torch = pytest.importorskip("torch")
+
+from src.ai_engine.model import ThreatFusionModel  # noqa: E402
 
 def test_space_encoder_integration():
     """Test that the SpaceEncoder is correctly integrated into the Fusion Model"""
