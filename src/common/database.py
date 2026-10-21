@@ -221,7 +221,7 @@ def _create_hypertable(target, connection, **kw):
     table_name = target.name
     if not table_name.replace("_", "").isalnum():
         raise ValueError(f"Invalid table name: {table_name}")
-    connection.execute(text(f"SELECT create_hypertable(:tbl, 'timestamp_utc', if_not_exists => TRUE)").bindparams(tbl=table_name))
+    connection.execute(text("SELECT create_hypertable(:tbl, 'timestamp_utc', if_not_exists => TRUE)").bindparams(tbl=table_name))
 
 
 _models_with_hypertables = []

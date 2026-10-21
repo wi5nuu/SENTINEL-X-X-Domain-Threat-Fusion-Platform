@@ -39,7 +39,7 @@ jobs:
 
       - name: Lint with ruff
         run: |
-          pip install ruff
+          pip install "ruff==0.15.15"
           ruff check src/ --ignore=E501,F401,F841
 
       - name: Run unit tests
