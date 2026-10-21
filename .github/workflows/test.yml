@@ -9,6 +9,9 @@ on:
 jobs:
   test:
     runs-on: ubuntu-latest
+    env:
+      # Test-only signing key; production must set its own JWT_SECRET_KEY.
+      JWT_SECRET_KEY: ci-test-only-key-not-used-in-production
 
     services:
       postgres:
